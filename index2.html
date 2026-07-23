@@ -1,0 +1,1948 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bonnie is a Good Girl</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  /* toon night: dark grey stage, gold & white ink, chunky cartoon edges */
+  --bg:#232228; --ink:#f5f0e2; --ink-dim:#c8b98e; --ink-faint:#8a8070;
+  --rose:#e87a96; --rose-soft:#f2a8bc; --rose-deep:#d4607e;
+  --gold:#e8c06a; --gold-deep:#c99b3f; --pee:#e8c93a; --danger:#e05a6a; --calm:#6ac48f;
+  --glass:rgba(48,46,56,.6); --gline:rgba(232,192,106,.35); --ghi:rgba(255,255,255,.12);
+  --font-serif:'Playfair Display', Georgia, serif;
+  --font-sans:'Inter','Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg); color:var(--ink); font-family:var(--font-sans); overflow:hidden; user-select:none}
+#bg-fluid{position:fixed; inset:0; z-index:0; pointer-events:none}
+#vignette{position:fixed; inset:0; pointer-events:none; z-index:50; opacity:0;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(200,30,60,.45) 100%)}
+::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:#4a3546;border-radius:99px}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes haloGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(232,192,106,.25))}50%{filter:drop-shadow(0 0 20px rgba(232,192,106,.55))}}
+
+.screen{position:fixed; inset:0; display:none; flex-direction:column; align-items:center;
+  justify-content:center; padding:24px; overflow-y:auto; z-index:1}
+.screen.active{display:flex}
+.btn{background:linear-gradient(180deg,#e8879c,#b8496a); color:#2a0812; font-weight:700;
+  border:none; border-radius:12px; padding:13px 34px; font-size:1.05rem; cursor:pointer;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.4), filter .18s, box-shadow .25s;
+  box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.btn:hover{filter:brightness(1.1); transform:translateY(-2px); box-shadow:0 10px 24px rgba(232,135,156,.3)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none}
+.btn.ghost{background:transparent; border:1px solid #5a4256; color:var(--ink-dim); box-shadow:none}
+.btn.ghost:hover{border-color:var(--rose); color:var(--rose)}
+.btn.small{padding:8px 18px; font-size:.85rem}
+.btn-row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px}
+.glass{background:linear-gradient(158deg, rgba(56,53,64,.72), rgba(36,34,42,.82));
+  backdrop-filter:blur(20px) saturate(130%); -webkit-backdrop-filter:blur(20px) saturate(130%);
+  border:3px solid var(--gline); border-radius:22px;
+  box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 var(--ghi)}
+@supports not (backdrop-filter: blur(1px)){ .glass{background:rgba(42,40,50,.97)} }
+
+/* ---------- welcome ---------- */
+#scr-welcome h1{font-family:var(--font-serif); font-size:clamp(2.2rem,6vw,3.6rem); text-align:center;
+  color:var(--gold); margin-bottom:6px; text-shadow:0 3px 0 rgba(0,0,0,.55), 0 0 24px rgba(232,192,106,.25)}
+#scr-welcome .halo{font-size:2.2rem; margin-bottom:6px}
+#scr-welcome .tagline{color:var(--ink-dim); font-style:italic; margin-bottom:10px; text-align:center; max-width:520px; line-height:1.6}
+#scr-welcome .agenote{color:var(--ink-faint); font-size:.72rem; margin-bottom:26px}
+#w-card{border-radius:22px; padding:34px 42px; max-width:620px; text-align:center}
+
+/* ---------- rules ---------- */
+#rules-card{max-width:600px; border-radius:22px; padding:36px 44px}
+.rules-kicker{color:var(--rose-soft); font-size:.68rem; letter-spacing:.26em; margin-bottom:10px; font-weight:600}
+#rules-card h2{font-family:var(--font-serif); font-size:1.9rem; margin-bottom:20px}
+.vow{display:flex; gap:16px; margin-bottom:16px; line-height:1.6; font-size:.94rem; color:#e6d8e2}
+.vow b{color:#fff}
+.vow-num{font-family:var(--font-serif); font-size:1.4rem; color:var(--rose); font-weight:700; min-width:26px; text-align:center}
+.rules-warn{border-left:3px solid var(--rose-deep); padding:8px 0 8px 16px; margin:20px 0 24px;
+  color:var(--ink-dim); font-style:italic; font-size:.86rem; line-height:1.6}
+
+/* ---------- game ---------- */
+#scr-game{display:none; flex-direction:row; align-items:stretch; justify-content:flex-start; padding:14px; gap:14px}
+#scr-game.active{display:flex}
+#game-left{flex:1 1 62%; display:flex; flex-direction:column; padding:24px 32px; min-width:0; height:100%;
+  border-radius:22px; overflow:hidden}
+#game-right{flex:0 0 36%; max-width:400px; display:flex; flex-direction:column; padding:4px 2px; gap:12px; height:100%; overflow-y:auto}
+
+/* itinerary bar */
+#itin{display:flex; align-items:center; gap:4px; margin-bottom:14px; flex-wrap:nowrap; overflow:hidden}
+.itin-node{width:30px; height:30px; min-width:30px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; background:rgba(255,252,240,.6); border:2px solid rgba(90,70,30,.2); opacity:.5;
+  transition:all .4s}
+.itin-node.done{opacity:.85; background:rgba(212,96,126,.18); border-color:rgba(184,74,102,.45)}
+.itin-node.cur{opacity:1; background:rgba(212,96,126,.3); border-color:var(--rose-deep); transform:scale(1.15);
+  box-shadow:0 0 12px rgba(184,74,102,.4)}
+.itin-link{flex:1; height:3px; background:rgba(90,70,30,.15); min-width:4px; border-radius:2px}
+.itin-link.done{background:rgba(184,74,102,.5)}
+
+#head-row{display:flex; align-items:baseline; gap:14px; margin-bottom:4px}
+#ch-title{font-family:var(--font-serif); font-size:1.15rem; color:var(--rose-soft)}
+.spacer{flex:1}
+#clock{font-family:var(--font-serif); font-size:1.7rem; font-weight:700; color:var(--gold);
+  text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#eta{color:var(--ink-dim); font-size:.75rem; letter-spacing:.14em; text-transform:uppercase; text-align:right}
+#eta b{color:var(--gold); letter-spacing:.02em}
+#hold-clock{color:var(--ink-faint); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; margin-bottom:14px}
+#hold-clock b{color:var(--rose-soft)}
+
+#story-wrap{flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; overflow-y:auto; padding:6px 0}
+#kicker{color:var(--rose-soft); font-size:.68rem; letter-spacing:.24em; text-transform:uppercase; margin-bottom:12px; font-weight:600}
+#watchers{font-size:.75rem; color:var(--ink-dim); margin-bottom:12px; letter-spacing:.08em}
+#scene-text{font-family:var(--font-serif); font-size:1.5rem; line-height:1.5; font-weight:600;
+  color:#ffffff; max-width:700px; margin-bottom:22px; white-space:pre-wrap;
+  text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#choices{display:flex; flex-direction:column; gap:11px; max-width:700px}
+.choice{font-size:.97rem; font-weight:700; color:#fff; border-radius:16px; padding:13px 17px 13px 13px;
+  display:flex; align-items:center; gap:13px; cursor:pointer; text-align:left; position:relative; overflow:hidden;
+  background:linear-gradient(150deg, rgba(64,60,72,.85), rgba(44,42,52,.9));
+  border:3px solid rgba(232,192,106,.4); box-shadow:0 4px 0 rgba(0,0,0,.45), 0 8px 18px rgba(0,0,0,.3);
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.3), border-color .2s, background .25s; font-family:var(--font-sans)}
+.choice:hover{border-color:var(--gold); transform:translateX(5px) translateY(-2px);
+  background:linear-gradient(150deg, rgba(78,72,86,.95), rgba(52,50,62,.95));
+  box-shadow:0 6px 0 rgba(0,0,0,.45), 0 12px 26px rgba(232,192,106,.15)}
+.choice:active{transform:translateX(5px) translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.45)}
+.choice:active{transform:translateX(5px) scale(.985)}
+.choice .ico{width:38px;height:38px;min-width:38px;border-radius:12px; display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem; background:linear-gradient(150deg,#e8c06a,#c99b3f);
+  border:2px solid rgba(0,0,0,.35); box-shadow:0 2px 0 rgba(0,0,0,.4);
+  transition:transform .25s cubic-bezier(.2,.9,.3,1.5)}
+.choice:hover .ico{transform:scale(1.15) rotate(-6deg)}
+.choice .tag{margin-left:auto; font-size:.64rem; letter-spacing:.08em; color:var(--rose-soft); opacity:.85; text-align:right}
+.choice.danger-opt{border-color:rgba(224,74,90,.4)}
+.choice.locked{opacity:.5; border-style:dashed; cursor:not-allowed}
+#urge-text{border-left:4px solid var(--gold); padding:6px 0 6px 16px; margin-top:24px;
+  color:var(--gold); font-family:var(--font-serif); font-style:italic; font-size:1.05rem; font-weight:600;
+  text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#urge-text:empty{display:none}
+
+/* coping strip */
+#cope-bar{display:none; gap:8px; margin-top:18px; flex-wrap:wrap}
+#cope-bar.on{display:flex}
+.cope-btn{background:linear-gradient(150deg, rgba(90,45,70,.4), rgba(46,26,44,.5));
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid #6a3a55; color:#e8b8c8; border-radius:999px; padding:8px 15px; font-size:.78rem;
+  cursor:pointer; transition:transform .2s cubic-bezier(.2,.9,.3,1.5), border-color .2s; box-shadow:inset 0 1px 0 var(--ghi)}
+.cope-btn:hover{border-color:#e8b8c8; transform:translateY(-2px) scale(1.05)}
+.cope-btn:active{transform:scale(.94)}
+.cope-btn:disabled{opacity:.3; cursor:not-allowed; transform:none}
+.cope-btn .uses{font-size:.64rem; opacity:.65; margin-left:5px}
+.cope-btn .eye{font-size:.64rem; opacity:.8; margin-left:5px; color:#f2c94c}
+
+/* right panel */
+#blob-holder{position:relative; width:100%; aspect-ratio:1/1.02; max-height:300px; border-radius:22px; overflow:hidden;
+  background:radial-gradient(circle at 50% 36%, #fdf3e0 0%, #f2e2c4 55%, #e2cda4 100%);
+  border:1px solid rgba(255,255,255,.3); box-shadow:0 16px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5); flex-shrink:0}
+#blob-canvas{position:absolute; inset:0; width:100%; height:100%}
+#bv-label{position:absolute; top:60%; left:0; right:0; text-align:center; font-family:var(--font-serif);
+  font-size:1.35rem; font-weight:700; color:#fdf6dc; z-index:5; pointer-events:none;
+  text-shadow:0 2px 8px rgba(40,30,5,.85)}
+#bv-adj{font-family:var(--font-sans); font-size:.7rem; font-weight:600; color:rgba(253,246,220,.9);
+  letter-spacing:.1em; margin-top:2px; text-shadow:0 1px 5px rgba(40,30,5,.85)}
+.bar-block{border-radius:14px; padding:11px 14px;
+  background:linear-gradient(150deg, rgba(58,55,66,.85), rgba(40,38,48,.9));
+  border:3px solid rgba(232,192,106,.3); box-shadow:0 3px 0 rgba(0,0,0,.4)}
+.bar-block label{display:flex; justify-content:space-between; font-size:.66rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-faint); margin-bottom:7px}
+.bar-block label .val{color:var(--ink); font-weight:700; letter-spacing:0; font-size:.82rem}
+.bar-outer{height:16px; background:#1a181e; border-radius:999px; overflow:hidden;
+  border:2px solid rgba(0,0,0,.55); box-shadow:inset 0 2px 4px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.08);
+  position:relative}
+.bar-inner{height:100%; width:0%; border-radius:999px; position:relative;
+  transition:width .8s cubic-bezier(.3,.8,.3,1), background .5s;
+  background-size:200% 100% !important; animation:shimmer 3.2s linear infinite;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.bar-inner::after{content:''; position:absolute; left:6px; right:6px; top:2px; height:5px;
+  border-radius:99px; background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(255,255,255,.15));
+  pointer-events:none}
+#bar-ctl .bar-inner{background:linear-gradient(90deg,#5ae87a,#c8f04a,#ffe84a)}
+#bar-gg .bar-inner{background:linear-gradient(90deg,#ff9ab4,#ffc86a,#ffe27a)}
+#bar-sus .bar-inner{background:linear-gradient(90deg,#b06af0,#ff6a8a,#ff5a5a)}
+#status-line{font-family:var(--font-serif); font-size:.82rem; color:var(--ink-dim); font-style:italic; text-align:center; min-height:1.1em}
+#panel-btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:auto}
+#face{font-size:3.2rem; text-align:center; line-height:1; margin-bottom:2px;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+@keyframes franticPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#bv-label.frantic{animation:franticPulse .5s ease-in-out infinite; color:#ffe8e8;
+  text-shadow:0 2px 8px rgba(120,10,20,.9)}
+
+/* ---------- endings ---------- */
+#scr-over .over-art{font-size:4rem; margin-bottom:8px}
+#scr-over h2{font-family:var(--font-serif); font-size:2rem; margin-bottom:14px; text-align:center; max-width:640px}
+#scr-over h2.win{color:var(--gold)} #scr-over h2.lose{color:var(--danger)}
+#over-story{max-width:600px; text-align:center; color:var(--ink-dim); line-height:1.7; font-style:italic;
+  margin-bottom:24px; font-family:var(--font-serif)}
+#scorecard{border-radius:20px; padding:22px 30px; margin-bottom:22px; min-width:320px}
+#scorecard .row{display:flex; justify-content:space-between; gap:30px; padding:5px 0; font-size:.9rem}
+#scorecard .row span:first-child{color:var(--ink-dim)}
+#scorecard .grade{text-align:center; font-family:var(--font-serif); font-size:1.5rem; font-weight:800; color:var(--gold); margin-top:12px}
+
+/* modal + toast */
+#modal-veil{position:fixed; inset:0; background:rgba(10,6,10,.78); z-index:100; display:none; align-items:center; justify-content:center; padding:20px}
+#modal-veil.on{display:flex}
+#modal{border-radius:20px; max-width:560px; width:100%; max-height:85vh; overflow-y:auto; padding:26px}
+#modal h3{color:var(--rose-soft); margin-bottom:14px; font-family:var(--font-serif)}
+#modal .slot{display:flex; align-items:center; gap:10px; background:rgba(255,250,236,.7); border:2px solid rgba(90,70,30,.2);
+  border-radius:10px; padding:12px 14px; margin-bottom:10px}
+#modal .slot .info{flex:1; font-size:.85rem; color:var(--ink-dim); min-width:0; overflow:hidden}
+#modal .slot .info b{color:var(--ink); display:block; font-size:.9rem}
+#modal textarea{width:100%; background:#fffaf0; color:var(--ink); border:2px solid rgba(90,70,30,.25); border-radius:8px;
+  padding:10px; font-size:.8rem; min-height:80px; font-family:monospace}
+#modal .close-x{float:right; background:none; border:none; color:var(--ink-dim); font-size:1.3rem; cursor:pointer}
+#toast{position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-90px); z-index:200;
+  border-radius:12px; padding:12px 26px; font-size:.92rem; opacity:0; max-width:580px; text-align:center;
+  color:var(--gold); font-weight:700; text-shadow:0 1px 0 rgba(0,0,0,.6);
+  background:linear-gradient(150deg, rgba(64,62,70,.96), rgba(42,40,48,.97));
+  backdrop-filter:blur(18px) saturate(130%); -webkit-backdrop-filter:blur(18px) saturate(130%);
+  border:3px solid rgba(232,192,106,.55); box-shadow:0 10px 26px rgba(0,0,0,.5), inset 0 1px 0 var(--ghi)}
+
+/* mini-game overlay */
+#mini-veil{position:fixed; inset:0; background:rgba(20,16,14,.6); backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px); z-index:140; display:none; align-items:center; justify-content:center}
+#mini-veil.on{display:flex}
+#mini-card{border-radius:24px; padding:28px 36px; text-align:center; max-width:640px; width:92%}
+#mini-title{font-family:var(--font-serif); font-size:1.4rem; font-weight:700; color:var(--gold); margin-bottom:4px;
+  text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#mini-sub{font-size:.85rem; color:var(--ink-dim); margin-bottom:18px}
+#mini-stage{min-height:70px; margin-bottom:18px; position:relative}
+#mini-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.mini-btn{background:linear-gradient(180deg,#e8c06a,#c99b3f); color:#2a1f08; font-weight:800; border:none;
+  border-radius:14px; padding:16px 24px; font-size:1.05rem; cursor:pointer; user-select:none;
+  box-shadow:0 4px 0 #8a6820, 0 8px 18px rgba(0,0,0,.35); transition:transform .06s}
+.mini-btn:active{transform:translateY(3px); box-shadow:0 1px 0 #8a6820}
+.mini-btn.rose{background:linear-gradient(180deg,#e8879c,#b8496a); color:#fff; box-shadow:0 4px 0 #7a2840}
+.mini-btn.dim{opacity:.35; pointer-events:none}
+#timing-bar{position:relative; height:44px; background:rgba(0,0,0,.5); border-radius:999px;
+  border:3px solid rgba(232,192,106,.5); overflow:hidden; box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
+#timing-zone{position:absolute; top:0; bottom:0; background:rgba(106,228,143,.5);
+  border-left:3px solid #6ae48f; border-right:3px solid #6ae48f}
+#timing-dot{position:absolute; top:4px; bottom:4px; width:18px; border-radius:99px; background:#fff;
+  box-shadow:0 0 16px rgba(255,255,255,.9)}
+#shrink-bar{height:10px; background:linear-gradient(90deg,#6ac48f,#e8c06a,#e05a6a); border-radius:99px;
+  transition:width .1s linear; width:100%}
+#mini-stage .big-emoji{font-size:3rem; line-height:1}
+#mini-stage .arrow{font-size:3.4rem; filter:drop-shadow(0 3px 0 rgba(0,0,0,.5))}
+#mini-stage .prompt{font-family:var(--font-serif); font-size:1.15rem; color:#fff; margin-bottom:10px}
+
+/* desperation wave overlay */
+#wave-veil{position:fixed; inset:0; background:rgba(60,30,20,.45); backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px); z-index:150; display:none; align-items:center; justify-content:center}
+#wave-veil.on{display:flex}
+#wave-card{border-radius:24px; padding:30px 38px; text-align:center; max-width:640px; width:92%;
+  border:3px solid var(--rose-deep) !important; animation:waveShake .35s infinite}
+@keyframes waveShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+#wave-title{font-family:var(--font-serif); font-size:1.5rem; font-weight:700; color:var(--rose-deep); margin-bottom:6px}
+#wave-sub{font-size:.85rem; color:var(--ink-dim); margin-bottom:18px}
+#wave-bar{position:relative; height:30px; background:rgba(90,70,30,.2); border-radius:999px;
+  border:2px solid rgba(90,70,30,.3); overflow:visible; margin-bottom:22px}
+#wave-fill{height:100%; width:50%; border-radius:999px;
+  background:linear-gradient(90deg,#c93a4a,#e8a840,#4a9c6a); transition:width .1s linear}
+.wave-line{position:absolute; top:-8px; bottom:-8px; width:3px; background:var(--gold); border-radius:2px}
+.wave-line::after{content:'START'; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  font-size:.55rem; font-weight:700; letter-spacing:.08em; color:var(--gold); white-space:nowrap}
+.wave-line.danger{background:var(--danger)}
+.wave-line.danger::after{content:'GIVE WAY'; color:var(--danger)}
+#wave-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.wave-btn{background:linear-gradient(180deg,#e8879c,#b8496a); color:#fff; font-weight:800; border:none;
+  border-radius:14px; padding:16px 22px; font-size:1rem; cursor:pointer; user-select:none;
+  box-shadow:0 4px 0 #7a2840, 0 8px 18px rgba(120,40,60,.35); transition:transform .06s}
+.wave-btn:active{transform:translateY(3px); box-shadow:0 1px 0 #7a2840}
+
+@media (max-width:820px){
+  #scr-game.active{flex-direction:column-reverse}
+  #game-right{max-width:none; flex-direction:row; align-items:center; overflow-x:auto; padding:8px}
+  #blob-holder{width:120px; min-width:120px; max-height:130px}
+  #game-right .bar-block{min-width:130px}
+  #scene-text{font-size:1.15rem}
+  #game-left{padding:16px 18px}
+}
+</style>
+</head>
+<body>
+<canvas id="bg-fluid"></canvas>
+<div id="vignette"></div>
+<div id="toast"></div>
+
+<!-- WELCOME -->
+<div class="screen active" id="scr-welcome">
+  <div id="w-card" class="glass">
+    <div class="halo">😇</div>
+    <h1>Bonnie is a Good Girl</h1>
+    <p class="tagline">Twenty hours. Two continents. One rule she has never broken:
+      good girls don't pee — and they never, ever inconvenience anyone.</p>
+    <p class="agenote">A suggestive endurance story for adult players. No explicit content.</p>
+    <div class="btn-row">
+      <button class="btn" id="btn-new">Begin the Journey</button>
+      <button class="btn ghost" id="btn-loadmenu">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- HER RULES -->
+<div class="screen" id="scr-rules">
+  <div id="rules-card" class="glass">
+    <h2>Her Rules</h2>
+    <div class="vow"><span class="vow-num">I</span><div><b>Good girls don't pee.</b> To win, Bonnie must reach the bathroom — in total privacy — while <b>extremely full</b> (past the 👑 line on her bladder), having <b>never leaked a single drop</b> all day. Anything less is not the record.</div></div>
+    <div class="vow"><span class="vow-num">II</span><div><b>Good girls never refuse.</b> Every cup offered with love must be drunk with a smile. Refusing a drink makes people <i>wonder why</i> — and Suspicion jumps.</div></div>
+    <div class="vow"><span class="vow-num">III</span><div><b>Good girls are never seen.</b> Squirming, crossing her legs, fighting a wave where eyes can find her — every visible struggle feeds the <b>Suspicion</b> meter. If it ever reaches certainty, being dry won't save her.</div></div>
+    <p class="rules-warn">Lose <b>Control</b> and everything is lost. Spend the <b>Halo</b> and victory turns to ash. And once they start suspecting... they never entirely stop.</p>
+    <button class="btn" id="btn-begin">She's Ready. She's Always Ready.</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="scr-game">
+  <div id="game-left" class="glass">
+    <div id="itin"></div>
+    <div id="head-row">
+      <div id="ch-title">—</div>
+      <div class="spacer"></div>
+      <div>
+        <div id="clock">4:10 AM</div>
+        <div id="eta"><b>—</b> TO THE ENSUITE</div>
+      </div>
+    </div>
+    <div id="hold-clock">HOLDING FOR <b>—</b></div>
+    <div id="story-wrap">
+      <div id="kicker"></div>
+      <div id="watchers"></div>
+      <div id="scene-text"></div>
+      <div id="choices"></div>
+      <div id="cope-bar"></div>
+      <div id="urge-text"></div>
+    </div>
+  </div>
+  <div id="game-right">
+    <div id="face">😌</div>
+    <div id="blob-holder">
+      <canvas id="blob-canvas"></canvas>
+      <div id="bv-label">0 ml<div id="bv-adj">empty</div></div>
+    </div>
+    <div class="bar-block" id="bar-ctl">
+      <label>Control <span class="val" id="ctl-val">100%</span></label>
+      <div class="bar-outer"><div class="bar-inner"></div></div>
+    </div>
+    <div class="bar-block" id="bar-gg">
+      <label>😇 Good Girl <span class="val" id="gg-val">100%</span></label>
+      <div class="bar-outer"><div class="bar-inner"></div></div>
+    </div>
+    <div class="bar-block" id="bar-sus">
+      <label>👀 Suspicion <span class="val" id="sus-val">0%</span></label>
+      <div class="bar-outer"><div class="bar-inner"></div></div>
+    </div>
+    <div id="status-line"></div>
+    <div id="panel-btns">
+      <button class="btn ghost small" id="btn-save">Save</button>
+      <button class="btn ghost small" id="btn-load">Load</button>
+      <button class="btn ghost small" id="btn-quit">Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENDING -->
+<div class="screen" id="scr-over">
+  <div class="over-art" id="over-art"></div>
+  <h2 id="over-title"></h2>
+  <p id="over-story"></p>
+  <div id="scorecard" class="glass"></div>
+  <div class="btn-row">
+    <button class="btn" id="btn-retry">Another Journey</button>
+    <button class="btn ghost" id="btn-menu">Menu</button>
+  </div>
+</div>
+
+<div id="modal-veil"><div id="modal" class="glass"></div></div>
+
+<!-- MINI-GAME STAGE -->
+<div id="mini-veil"><div id="mini-card" class="glass">
+  <div id="mini-title"></div>
+  <div id="mini-sub"></div>
+  <div id="mini-stage"></div>
+  <div id="mini-btns"></div>
+</div></div>
+
+<!-- DESPERATION WAVE -->
+<div id="wave-veil"><div id="wave-card" class="glass">
+  <div id="wave-title">⚡ A WAVE HITS — FIGHT IT</div>
+  <div id="wave-sub">Her control is slipping. CLICK to claw it back above the line!</div>
+  <div id="wave-bar">
+    <div id="wave-fill"></div>
+    <div class="wave-line" id="wave-lineA"></div>
+    <div class="wave-line danger" id="wave-lineB"></div>
+  </div>
+  <div id="wave-btns"></div>
+</div></div>
+
+<script>
+/* ================= BONNIE IS A GOOD GIRL — v1.0 ================= */
+/* ---------------- CONFIG ---------------- */
+const CFG = {
+  capacity: 3000,          // her hidden capacity (ml) - increased for easier difficulty
+  stretch: 1.6,            // journey track: absolute limit = capacity*stretch (2400)
+  hardStretch: 2.5,        // hard road: her legend-tier ceiling (3750 = 250%)
+  hardTarget: 3375,        // hard road record: 225% delivered to privacy
+  hardDeathCtl: 20,        // hard road: control below this = instant loss
+  graceOver: 1.06,         // tiny window past the limit
+  stomachAbsorbPerHr: 0.9, // fraction of stomach content reaching bladder per hour
+  kidneyBase: 0.85,        // ml/min passive
+  ctlStart: 100, ggStart: 100, susStart: 0,
+  susDiscover: 100,
+  copeSet: [
+    {id:'clamp',  label:'Clamp down hard', uses:1, ctl:9,  sus:6},
+    {id:'cross',  label:'Cross my legs',   uses:2, ctl:5,  sus:2},
+    {id:'press',  label:'Press — discreetly', uses:1, ctl:7, sus:4},
+    {id:'breathe',label:'Slow breath, count to ten', uses:2, ctl:3, sus:0}
+  ],
+  copeCap: {clamp:3, cross:5, press:3, breathe:6},   // reserves BANK across chapters — the endgame currency
+  target: 2250,                                       // 150% of capacity: the record. Win = deliver this to privacy.
+  leakZone:[10,15], leakChance:0.45, heavyLeak:[80,150],
+  possessThreshold: 80,                               // above this halo, she may act without you
+  susCalm: 1.2,            // suspicion decay per beat when acting normal & unwatched
+  leakMl: [20,45],
+  ggLeak: 18, ggAsk: 14, ggDelay: 6, ggRefuse: 8,
+  holdStartMin: 3*60+30    // she last went at 3:30 AM yesterday... the counter is already huge
+};
+
+/* fullness adjectives (of absolute limit) */
+const ADJ = ['empty','a slight pang','half full','comfortable','getting fuller','uncomfortable',
+  'aching','super full','desperate','bursting','frantic','straining','unbearable'];
+
+/* inner-voice pools by band */
+const URGE = {
+  calm:["All quiet. For now. The itinerary says that won't last.",
+        "She feels light. Capable. Suspiciously capable.",
+        "Nothing yet. Just the long arithmetic of the day ahead."],
+  uncomfortable:["A presence, low and patient. She smiles a little wider.",
+        "She shifts her weight. Politely. Invisibly.",
+        "It's begun. It always begins earlier than she hopes."],
+  tense:["Every minute is a small negotiation now. She's winning. Mostly.",
+        "She recalculates the hours left. The number does not improve.",
+        "Sitting still is easy. It's the standing up that costs."],
+  desperate:["Her bladder throbs against the lacing. She keeps her voice level.",
+        "Waves now. She rides each one with a pleasant, fixed expression.",
+        "Don't think about water. Don't think about the fountain. Too late."],
+  critical:["Her whole body is one clenched, smiling fist.",
+        "The edges of everything pulse. She says 'thank you' to someone.",
+        "There is nothing in the world but the pressure and the performance."]
+};
+const NEED = {
+  tense:["A restroom sign. She looks away from it like it's an old flame."],
+  desperate:["There's a bathroom RIGHT THERE. Good girls don't. Good girls DON'T."],
+  critical:["Every cell is screaming for the door with the little skirt symbol. She folds her hands."]
+};
+
+/* observers line */
+function watcherLine(n){
+  const base = n===0 ? '🌙 No one is watching.'
+    : n===1 ? '👀 One pair of eyes nearby.'
+    : n===2 ? '👀👀 People around her.'
+    : '👀👀👀 All eyes on Bonnie.';
+  return (typeof st!=='undefined' && st && st.track==='hard' && n>0)
+    ? base+' They keep glancing at the way she moves.' : base;
+}
+/* ---------------- END CONFIG ---------------- */
+
+/* ---------------- CHAPTERS ----------------
+ beat fields:
+  t: scene | watch:0-3 | min: minutes this beat consumes
+  drink:{label, ml, gg} -> auto accept/sip/refuse choices
+  offer:{who} -> someone OFFERS the bathroom (accept = relief + big GG cost)
+  spike:{ctl,note} -> applied on arrival (hug, bump, turbulence)
+  choices:[{x,icon,tag,ctl,gg,sus,ml,min,note,cls}] -> authored
+  stealth:{noise} -> ch1 noise system: choice noise values roll against waking
+------------------------------------------------ */
+const CH = [
+{id:'night', icon:'🌙', title:'4:10 AM — The Silent House', anchor:250, planMin:30, watchBase:0, beats:[
+ {t:"The glowing digits click to 4:10 AM. Under the blanket I am curling my toes, biting my lip. I haven't gone since 3:30 yesterday morning, and the bulge under my sleep leotard has no more room.\n\nThe family health app glows: Dad — deep sleep. Mom — deep sleep. Chloe — deep sleep. If I'm ever going to go, it's now. Silently. Invisibly.",
+  watch:0, min:3, choices:[
+   {x:"Slide out of bed slowly — every spring of this mattress is a tattletale.", icon:'🤫', noise:5, min:3},
+   {x:"Just get UP. Speed over silence. I can't wait another minute.", icon:'💨', noise:22, ctl:2, min:1},
+   {x:"Lie still one more minute and check the app again. Be sure.", icon:'📱', noise:0, min:5, ctl:-2, note:"The extra minute costs more than it buys."}
+  ]},
+ {t:"The hallway. Bare feet on hardwood that has opinions. And then — a mattress creaks behind Chloe's door. A sleepy, half-awake voice: 'Mmh... Bonnie...?'\n\nShe's stirring. The bathroom is downstairs, past her door. My room is three steps back.",
+  watch:0, min:4, choices:[
+   {x:"Slip back to my room and KEEP HOLDING. All of it. Through the whole journey. If she's stirring, the bathroom is enemy territory — and the record of records begins now.", icon:'😈', endChapter:true, track:'hard', min:4, cls:'danger-opt', tag:'THE HARD ROAD — experts only',
+    note:"She eases her door shut, 2100 ml aboard, twenty-plus hours ahead. Below 20% control on this road, everything ends. Magnificent madness."},
+   {x:"Freeze. Wait. Let her settle back into sleep — then continue to the bathroom.", icon:'🫥', noise:0, min:8, ctl:-3, note:"Two full minutes of statue-hood while Chloe's breathing slows again. The pressure uses the time shamelessly."}
+  ]},
+ {t:"The stairs. Fourteen of them, each with a personality. My bladder throbs with every heartbeat — I grip the banister white-knuckled and lower myself down like a bomb-disposal technician.",
+  watch:0, min:5, stealthCheck:true, choices:[
+   {x:"One stair at a time, weight on the banister, slow as syrup.", icon:'🤫', noise:6, min:5},
+   {x:"Skip the creaky fourth and seventh — I mapped them years ago.", icon:'🧠', noise:9, min:3},
+   {x:"Sit down and go step by step on my hands. Undignified. Silent.", icon:'🍑', noise:3, min:7, ctl:-2}
+  ]},
+ {t:"The powder room door. Ten feet. The final waddle — knees together, one hand jammed against the lacing. I made it. The door clicks shut behind me and the silence is enormous.",
+  watch:0, min:4, choices:[
+   {x:"Release — NOW. Speed over silence. I cannot wait one more breath.", icon:'🚽', relief:'full', track:'journey', noise:15, min:2, note:"Empty. Truly empty. And slightly loud about it. Now the journey: refill to the crown line and deliver it to Ibiza."},
+   {x:"Ease down and release as slowly, as silently, as humanly possible.", icon:'🤫', relief:'full', track:'journey', noise:2, min:6, ctl:-2, note:"A tidal wave with manners. Minutes of it. Empty at last — and the house never heard a thing."}
+  ]},
+ {t:"The flush question. The pipes in this house rattle like applause. If anyone hears water at 4 AM, there will be questions at breakfast — kind, loving, unbearable questions.",
+  watch:0, min:3, skipIfHeld:true, choices:[
+   {x:"Don't flush. Ease the lid down, leave silently, flush 'casually' after everyone wakes.", icon:'🤫', noise:0, sus:2, min:3, note:"A good girl's crime scene, managed."},
+   {x:"Flush and sprint. The rattle races up the pipes as I race up the stairs.", icon:'💨', noise:30, min:2}
+  ]}
+]},
+{id:'suit', icon:'🎀', title:'8:00 AM — Breakfast & the Suit', anchor:480, planMin:60, watchBase:2, beats:[
+ {t:"8:00 AM. Sunlight through the curtains, suitcases standing by the door, my passport on the dresser. Departure day — the house smells of toast and sounds like Chloe's playlist. Twenty hours of travel start after breakfast.",
+  watch:1, min:10},
+ {t:"Chloe bounces on my bed with the bodysuit — the one that laces up the back — and simply starts. 'Hold STILL! You'll look INSANE. Like a superhero.' The lacing cinches, row by row, directly across everything I am protecting. Her control slips with every pull.",
+  watch:1, min:15, choices:[
+   {x:"'Chloe— gently! Go easy—'", icon:'🫢', gg:-6, sus:8, ctl:3, min:15, tag:'ASK',
+    note:"'Go easy? Of course...' — said kindly, received kindly, and REMEMBERED. 'Everything alright, Bon?'"},
+   {x:"Endure it. Smile. Say nothing.", icon:'😖', ctl:-9, min:15, tag:'ENDURE', cls:'danger-opt',
+    note:"Row by row, cinched to perfection. The cost is paid somewhere nobody can see. Yet."}
+  ]},
+ {t:"Downstairs, Mom has made a spread — cereal, fruit, smoothies, and a pot of green tea steaming like a dare. 'Drink up, sweetheart, you have such a long flight. Hydration is everything!' A glass is already being filled. The only question is WHICH one.",
+  watch:3, min:20, choices:[
+   {x:"The small juice — modest, quick, defensible.", icon:'🧃', ml:220, ctl:-1, min:20},
+   {x:"The green tea — Mom's pride. Warm, generous... and it runs straight through.", icon:'🍵', ml:340, ctl:-5, min:20, note:"'That's my girl.' The teapot hovers, ready for the refill she cannot refuse."},
+   {x:"The big smoothie — heavy, slow, an anchor in the stomach.", icon:'🥤', ml:450, ctl:-2, min:20},
+   {x:"All of it. Every glass. Make Mom GLOW on departure day.", icon:'😇', ml:640, ctl:-6, gg:6, min:25, cls:'danger-opt', tag:'ALL OF IT',
+    note:"Mom beams like a lighthouse. The Good Girl shines. The cargo hold takes on serious water."}
+  ]},
+ {t:"Dad checks his watch. 'Wheels up in ten! Everyone use the bathroom — it's a long drive.' Mom goes. Chloe goes. They look at me, holding the door open, warm and expectant.",
+  watch:3, min:10, offer:{who:"Dad, holding the door"}},
+ {t:"The car. The seatbelt settles directly across my lower belly. Dad adjusts the mirror: 'Right — interstate or the bypass? One's longer, one's bumpier, and I can never remember which is worse at this hour.'\n\nNeither can I. That's the problem.",
+  watch:2, min:15, spike:{ctl:-3, note:"The belt finds the exact spot."}, choices:[
+   {x:"'The interstate, Dad.'", icon:'🛣️', roulette:'route', slot:0, min:15},
+   {x:"'Take the bypass.'", icon:'🛤️', roulette:'route', slot:1, min:15},
+   {x:"'You choose!' — surrendering my fate to a man who loves scenic detours.", icon:'🎲', roulette:'route', slot:2, min:15}
+  ]}
+]},
+{id:'airport', icon:'🛄', title:'10:00 AM — Check-in & Security', anchor:600, planMin:150, watchBase:2, beats:[
+ {t:"Departures hall. Mom does a little jig — 'That coffee went right through me!' — and the three of them cluster toward the restrooms, wheeling my luggage cart over. 'Bonnie, come on, last chance before the queue!'",
+  watch:3, min:15, offer:{who:"the whole family, mid-jig"}},
+ {t:"Check-in queue. Forty minutes of standing. The woman ahead has a water bottle she keeps sipping, the fountain by the pillar burbles its little song, and my suit creaks when I shift my weight.",
+  watch:2, min:40, mini:'rhythm', choices:[
+   {x:"Stand perfectly still like a mannequin of a polite young woman.", icon:'🗿', ctl:-3, min:40},
+   {x:"The subtle shuffle-clamp. Shuffle, clamp. Shuffle, clamp. A private choreography.", icon:'👣', ctl:2, sus:5, min:40},
+   {x:"Lean my hip against the luggage cart. It looks casual. It is load-bearing.", icon:'🛒', ctl:1, sus:2, min:40}
+  ]},
+ {t:"Security. Shoes off, laptop out, belt— no, the suit stays, it HAS to stay. The TSA officer watches everyone with professional suspicion. 'Step through. Arms up.' Arms UP? Everything pulls upward against everything.",
+  watch:3, min:30, mini:'hold', spike:{ctl:-5, note:"Arms raised. Core stretched. Catastrophe negotiated."}, choices:[
+   {x:"Smile at the officer. Comply crisply. Be forgettable.", icon:'😊', sus:-3, min:30},
+   {x:"Move a touch too fast through the scanner — get it OVER with.", icon:'💨', sus:6, min:20, note:"'Ma'am. Again, slower.' The scanner does not negotiate."},
+   {x:"Ask for the seated pat-down instead. Sitting is... strategic.", icon:'🪑', ctl:3, sus:8, gg:-3, min:35, note:"They oblige, puzzled. Puzzled is dangerous."}
+  ]},
+ {t:()=>{ st.confDrink = st.confDrink || pick([
+    {n:'giant iced tea', ml:420},{n:'mango smoothie', ml:450},{n:'lemon squash', ml:380},
+    {n:'oversized water bottle', ml:500},{n:'peach bubble tea', ml:440}]);
+   return `Gate B44 security recheck. The officer holds up my ${st.confDrink.n} — bought in a moment of thirst-madness at the café. 'No liquids past this point, miss. Drink it or bin it. Your call.'\n\nThe queue behind me watches with interest.`; },
+  watch:3, min:45, choices:[
+   {x:"Chug it. All of it. Right here, at the barricade, like a legend.", icon:'🥤', min:40, conf:'chug', cls:'danger-opt', tag:'CHUG'},
+   {x:"Tip it into the bin — and feel the waste of it stain the halo.", icon:'🗑️', min:40, conf:'bin', tag:'WASTE'}
+  ]}
+]},
+{id:'flight', icon:'✈️', title:'1:00 PM — Fourteen Hours in 34A', anchor:780, planMin:840, watchBase:2, beats:[
+ {t:"34A. The window seat. My kingdom: fifty centimeters wide, walled by a large sleeping businessman in 34B who buckled in, said 'long flight, eh,' and was unconscious before the safety video.\n\nFourteen hours. The seatbelt sign glows. I fold my hands.",
+  watch:1, min:60, choices:[
+   {x:"Perfect. A wall of businessman means nobody can see me squirm.", icon:'🧱', sus:-4, ctl:-1, min:60},
+   {x:"Do the math again. PROPERLY this time. Know exactly where I stand.", icon:'🧮', intel:true, ctl:-2, min:60},
+   {x:"Sleep NOW while it's quiet. Sleep is time travel for the desperate.", icon:'😴', ctl:9, min:90, note:"An hour of merciful nothing. The body knits itself back together — though the kidneys never sleep."}
+  ]},
+ {t:"Meal service. The trolley arrives with salty chicken and the attendant's radiant, unskippable smile: 'And to drink? We have tea, coffee, juice — or I can do the large water.' There is no 'nothing, thanks' on this airline. There never is, for girls like me.",
+  watch:2, min:45, choices:[
+   {x:"'Tea, please.' Warm, modest... deceptively large pot.", icon:'🍵', ml:340, ctl:-3, min:45, note:"The tea keeps coming. Airline pots are bottomless by design."},
+   {x:"'Coffee.' Small cup. Sharp price — it goes straight through.", icon:'☕', ml:250, ctl:-5, min:45},
+   {x:"'Juice, thank you.' Sweet, heavy, and somehow 400ml.", icon:'🧃', ml:400, min:45},
+   {x:"'Just the water.' The LARGE water. The only size they carry.", icon:'💧', ml:350, sus:2, min:45, note:"'Just water?' The attendant's eyebrow files a report."}
+  ]},
+ {t:"Hour five. Turbulence. The cabin bounces like a toddler on a trampoline. The seatbelt sign BINGS on and the belt cinches with every jolt. Somewhere behind me, someone's water bottle rolls down the aisle, sloshing audibly.",
+  watch:1, min:90, mini:'taps', spike:{ctl:-7, note:"Every jolt lands like a fist."}, choices:[
+   {x:"Grip both armrests and ride it like a rodeo of pure regret.", icon:'🎢', min:90},
+   {x:"Press the blanket down over my lap — pressure against pressure.", icon:'🛡️', ctl:4, sus:2, min:90},
+   {x:"Hum the safety video jingle. Panic, but organized.", icon:'🎵', ctl:-2, sus:-2, min:90}
+  ]},
+ {t:"Hour eight. The businessman wakes, stretches, and heads for the lavatory. The aisle is OPEN. The little door with the little sign is EMPTY. Fifteen steps. Nobody would even notice.",
+  watch:0, min:60, offer:{who:"the universe itself, arranging a clear aisle"}},
+ {t:"Hour eleven. The cabin lights are off. My legs have opinions, my lacing has demands, and the second drink service is coming down the aisle with its jingling, sloshing, merciless cart.",
+  watch:1, min:120, drink:{label:"'just water, thank you' — a tall one, because refusing twice is rude", ml:300, gg:3}},
+ {t:"Final descent. The seatbelt sign locks everyone down for forty minutes of slow, tilting, pressurized descent. My ears pop. Other things threaten to. The businessman cheerfully narrates the landmarks out my window, leaning over.",
+  watch:2, min:60, mini:'mash', spike:{ctl:-8, note:"Descent pressure. Cabin pressure. Every kind of pressure."}, choices:[
+   {x:"Nod at every landmark. Smile. Be a lovely window companion.", icon:'😊', gg:2, ctl:-3, min:60},
+   {x:"Fake sleep. Rude-adjacent, but faces can't leak secrets while unconscious.", icon:'😴', gg:-2, sus:-3, ctl:2, min:60},
+   {x:"Count the seconds between spasms like contractions. Knowledge is power?", icon:'⏱️', min:60, note:"Forty-one. Thirty-eight. Thirty-five. The trend is not her friend."}
+  ]}
+]},
+{id:'imm', icon:'🛂', title:'8:30 PM (local) — Immigration', anchor:1230, planMin:60, watchBase:3, beats:[
+ {t:"The immigration hall. A stone-faced officer, a yellow line, and a sign that says REMAIN COMPOSED AND READY. I am one of those things.\n\n'Purpose of visit?' My bladder spasms exactly as I open my mouth.",
+  watch:3, min:30, spike:{ctl:-5, note:"Spasm. Mid-sentence. She converts the gasp into enthusiasm."}, choices:[
+   {x:"'Exchange program!' Bright. Crisp. Rehearsed in the mirror weeks ago.", icon:'🎓', min:25},
+   {x:"Answer in the fewest possible syllables. Words shake things loose.", icon:'🤐', sus:5, min:30, note:"'...You okay, miss?' 'Yes. Happy. Jetlag.'"},
+   {x:"Compliment his stamp technique. Charm is a pressure valve.", icon:'✨', gg:2, sus:-3, min:35, note:"He almost smiles. The stamp comes down like mercy."}
+  ]},
+ {t:"The baggage carousel. My bladder has begun spasming rhythmically now — little electric shocks of 'let GO' every thirty seconds. And there, across the hall: a restroom sign, glowing like an oasis. My hosts' message: 'We're outside, love!! 🎉'",
+  watch:2, min:30, offer:{who:"the airport, one last time — they ARE waiting outside, though"}},
+ {t:"My fifty-pound suitcase sails past on the belt. Heaving it off means bending, twisting, and lifting — three verbs my body has formally banned.",
+  watch:2, min:10, spike:{ctl:-6, note:"The lift. Something very nearly gives. Very. Nearly."}, choices:[
+   {x:"One clean deadlift, exhale like a powerlifter, DONE.", icon:'🏋️', min:5},
+   {x:"Let it go around again and catch it at a better angle next lap.", icon:'🔁', min:12, ctl:-2, gg:-1, note:"Four more minutes of carousel jazz."},
+   {x:"Ask the kind man beside me for help, with my best exhausted smile.", icon:'🙏', gg:-4, sus:2, min:6}
+  ]}
+]},
+{id:'hosts', icon:'🚗', title:'9:30 PM — The Higgins Family', anchor:1290, planMin:90, watchBase:3, beats:[
+ {t:"'BONNIE! BONNIE!' A glittery sign, a sprinting girl my age — Irina — and Mrs. Higgins, warm as an oven. Before I can brace, it's a pincer hug: arms right around my laced waist from both sides, squeezing my rock-hard bladder like a stress toy.\n\n'Hnnng — HI!'",
+  watch:3, min:10, mini:'hold', spike:{ctl:-9, note:"The double hug. Her eyes water with what everyone assumes is emotion."}},
+ {t:"Irina eyes the bodysuit. 'You look HOT. How do you even go to the bathroom in that?' — 'I didn't,' I admit. Mrs. Higgins points at the restroom nearby: 'Want to go before we drive, love? It's forty minutes.' She's also jingling the car keys.",
+  watch:3, min:10, offer:{who:"Mrs. Higgins, keys jingling, kind eyes checking her watch"}},
+ {t:"The car. Mrs. Higgins taps the wheel at a junction: 'Coastal road or the tunnel, love? One's ever so pretty, the other's quick — though with the roadworks lately, honestly, who knows.'\n\nIrina turns around fully in her seat to watch me decide. Every roundabout sloshes the cargo.",
+  watch:2, min:40, spike:{ctl:-5, note:"Roundabouts. Why is it ALL roundabouts."}, choices:[
+   {x:"'The coastal road sounds lovely.'", icon:'🌊', roulette:'route', slot:0, min:40},
+   {x:"'The tunnel, maybe? Quickest is best.'", icon:'🚇', roulette:'route', slot:1, min:40},
+   {x:"'Surprise me!' — a sentence I will regret in approximately four minutes.", icon:'🎲', roulette:'route', slot:2, min:40}
+  ]},
+ {t:"The Higgins house — warm, biscuit-scented. 'Sit, sit!' Mrs. Higgins produces a teapot the size of a fire hydrant. 'You must be PARCHED after that flight.' Irina bounces off — 'I'm bursting!' — and offers me the downstairs loo first. First. Me. First.",
+  watch:2, min:30, offer:{who:"Irina, hopping on one foot, genuinely bursting herself"}},
+ {t:"The welcome tea. Mrs. Higgins pours a cup that steams like a geyser and watches me with the tender expectancy of a woman who has baked for three days. 'Milk? Sugar? Drink up, love.'",
+  watch:2, min:30, drink:{label:"the welcome tea (three days of baking is watching)", ml:350, gg:5}}
+]},
+{id:'night2', icon:'🌒', title:'11:30 PM — The First Night', anchor:1410, planMin:60, watchBase:0, beats:[
+ {t:"My room. The suit finally OFF — the relief of unlacing is so intense I have to sit down, which is its own mistake. Then Irina appears, chewing gum, to explain 'the situation': the only bathroom upstairs is the ensuite... inside HER room. 'Just come through whenever! I sleep like the dead.' The downstairs loo? Broken flush. Being fixed Tuesday.",
+  watch:1, min:15, choices:[
+   {x:"'No problem at all!' — a sentence so false it should be arrested.", icon:'😇', gg:3, min:10},
+   {x:"Stay up a while getting to know her — friendship is politeness too.", icon:'💬', gg:5, ctl:-4, min:45, runLost:true,
+    note:"They talk until far too late. Irina yawns happily: 'Best first night EVER. I am SO sleeping in tomorrow.'"},
+   {x:"Scout the hallway quietly first. Know the terrain. Count the creaks.", icon:'🗺️', sus:2, min:20, ctl:-2, note:"The floor is old. The floor is LOUD. Noted."}
+  ]},
+ {t:"Midnight. I lie in the dark doing inventory: a day and a half of tea, smoothies, iced tea, airline water and welcome tea, all of it processed, filed, and delivered downstairs. I am beyond full. I am structural damage waiting to happen.\n\nThrough the wall: Irina's music, still on.",
+  watch:0, min:60, choices:[
+   {x:"Wait her out. Good girls wait. The record grows with every minute.", icon:'⏳', ctl:-5, gg:2, min:60},
+   {x:"Pace the room in tiny circles. Movement is management.", icon:'🚶', ctl:4, sus:1, min:45},
+   {x:"Lie perfectly still and go somewhere else in my head. The beach. A DRY beach.", icon:'🧘', ctl:7, min:60}
+  ]},
+ {t:"2 AM. The music stopped an hour ago. Her door is six steps away. The ensuite, six steps past that. Twelve steps through a sleeping stranger's bedroom, in the dark, in a foreign country, on night one.\n\nOr: hold until morning. Her phone said she runs at dawn.",
+  watch:0, min:30, finale:true, choices:[
+   {x:"Go. Now. Through her room, silent as a guilty thought.", icon:'🤫', route:'sneak'},
+   {x:"Hold until her morning run. Four more hours. The PERFECT record. The good-girl grand slam.", icon:'😇', route:'dawn', cls:'danger-opt', tag:'THE LEGEND ROAD'},
+   {x:"The window. The garden. The dark. ...I am NOT a garden girl. Am I?", icon:'🌿', route:'garden', cls:'danger-opt', tag:'DESPERATE MEASURES'}
+  ]}
+]},
+{id:'dawn', icon:'🌅', title:'The Reckoning', planMin:60, watchBase:0, beats:[]} // resolved by finale routes
+];
+/* ---------------- END CHAPTERS ---------------- */
+
+/* ================= ENGINE ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng = mulberry32(Date.now()>>>0);
+const R=(a,b)=>a+rng()*(b-a), RI=(a,b)=>Math.floor(R(a,b+1)), pick=a=>a[Math.floor(rng()*a.length)];
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const $=s=>document.querySelector(s);
+const G = typeof gsap!=='undefined' ? gsap : null;
+
+let st = null;
+function newState(seed){
+  return {
+    seed, v:2,
+    time: 4*60+10,               // minutes since day-1 00:00
+    lastRelief: -(20*60+30),     // 3:30 AM yesterday
+    stomach: 150, bv: 2100,      // she wakes ALREADY at 140% — straining, sweating, silent
+    ctl: 40, gg: CFG.ggStart, sus: CFG.susStart,
+    track: 'open',               // 'open' until the powder-room choice → 'journey' | 'hard'
+    susHigh: false, lastWaveBeat: -3, noticeLevel: 0,
+    chI: 0, beatI: 0, chElapsed: 0,
+    copeUses: {}, noise: 0, heldAllNight: false, relievedAtHome: false,
+    leaks: 0, leakedMl: 0, drinksAccepted: 0, noticed: 0, peakMl: 0,
+    pendingEvent: null, over: false, finRoute: null, finStep: 0,
+    bvAtRelief: 0, lastHold: 0, runLost: false, possessed: 0, diary: [],
+    log: []
+  };
+}
+function resetCope(){ st.copeUses = Object.fromEntries(CFG.copeSet.map(c=>[c.id,c.uses])); }
+function copeGain(){ for(const c of CFG.copeSet){
+  st.copeUses[c.id] = Math.min(CFG.copeCap[c.id], (st.copeUses[c.id]||0)+1); } }
+function diary(t){ st.diary.push(t); }
+
+const limit  = ()=> CFG.capacity*(st.track==='hard' ? CFG.hardStretch : CFG.stretch);
+const target = ()=> st.track==='hard' ? CFG.hardTarget : CFG.target;
+const press  = ()=> st.bv/limit();
+function band(){
+  if (st.track==='hard' && st.bv>=2000){   // the hard road knows no calm — she is NEVER okay again
+    return (st.ctl<28 || st.bv>3050) ? 'critical' : 'desperate';
+  }
+  const p = press();
+  if (p>0.92 || st.ctl<12) return 'critical';
+  if (p>0.75 || st.ctl<25) return 'desperate';
+  if (p>0.55) return 'tense';
+  if (p>0.32) return 'uncomfortable';
+  return 'calm';
+}
+function adj(){
+  if (st.track==='hard' && st.bv>=2000){   // sensation vs a NORMAL body, not her legend ceiling
+    return st.bv<2500 ? 'straining' : st.bv<3100 ? 'unbearable' : 'beyond all reason';
+  }
+  return ADJ[Math.max(0,Math.min(12,Math.floor(press()*12.4)))];
+}
+
+/* her face — the animated tell */
+let faceTmp=null, faceTimer=null;
+function setFace(e,ms){ faceTmp=e; clearTimeout(faceTimer);
+  faceTimer=setTimeout(()=>{faceTmp=null; if(st&&!st.over)updateFace();}, ms||2200);
+  updateFace(); }
+function updateFace(){
+  const el=$('#face'); if(!el||!st)return;
+  const b=band();
+  const e = faceTmp || (st.track==='hard'
+    ? (b==='critical'?'🥵':'😖')
+    : {calm:'😌',uncomfortable:'🙂',tense:'😬',desperate:'😖',critical:'🥵'}[b]);
+  if (el.textContent!==e){ el.textContent=e;
+    if(G) G.fromTo(el,{scale:.5,rotate:-15},{scale:1,rotate:0,duration:.5,ease:'back.out(2.5)'}); }
+}
+function fmtClock(m){
+  const d = Math.floor(m/1440), mm = ((m%1440)+1440)%1440;
+  const h = Math.floor(mm/60), mi = String(mm%60).padStart(2,'0');
+  const hh = h%12||12, ap = h<12?'AM':'PM';
+  return `${hh}:${mi} ${ap}${d>0?' +'+d:''}`;
+}
+function fmtDur(m){ return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'; }
+
+function tick(mins){
+  const steps = Math.max(1, Math.round(mins/6)), dt = mins/steps;
+  for(let i=0;i<steps;i++){
+    const move = st.stomach*(CFG.stomachAbsorbPerHr/60)*dt;
+    st.stomach = Math.max(0, st.stomach-move);
+    st.bv += move + CFG.kidneyBase*(st.track==='hard'?0.78:1)*dt;
+    st.time += dt;
+  }
+  st.time = Math.round(st.time);
+  st.peakMl = Math.max(st.peakMl, st.bv);
+}
+function decay(mins, watch){
+  const p = press();
+  let d = (0.30 + 3.6*p*p)*(mins/30);
+  if (p>0.85) d += (p-0.85)*10*(mins/30);
+  if (st.track==='hard') d *= 0.5;   // a legend's bladder: slower burn, same stakes
+  st.ctl = Math.max(0, Math.min(100, st.ctl - d));
+  if (watch>0 && (band()==='desperate'||band()==='critical')) st.sus = Math.min(100, st.sus + 0.6*watch*(mins/30));
+  else if (watch===0) st.sus = Math.max(susFloor(), st.sus - CFG.susCalm);
+}
+function addGG(n){ st.gg = Math.max(0, Math.min(100, st.gg+n));
+  if (G && Math.abs(n)>=2) G.fromTo('#gg-val',{scale:1.3,color:n>0?'#e8c06a':'#e04a5a'},{scale:1,color:'#f2ecf0',duration:.8}); }
+function susFloor(){ return st.susHigh ? 30 : 0; }   // once they've half-seen, they never fully unsee
+function addSus(n){
+  st.sus = Math.max(susFloor(), Math.min(100, st.sus+n));
+  if (st.sus > 50 && !st.susHigh){ st.susHigh = true;
+    diary(`Suspicion crossed the line at ${fmtClock(st.time)}. From this moment, someone is always half-watching. It never fully fades again.`); }
+  if (n>=4){ st.noticed++; if(G) G.fromTo('#bar-sus',{scale:1.05},{scale:1,duration:.5}); } }
+
+function relief(where){
+  st.lastHold = st.time - st.lastRelief;
+  st.bvAtRelief = st.bv;
+  
+  // Smoothly drain the volume to 0 over 10 seconds instead of an instant drop
+  if (G) {
+    G.to(st, { bv: 0, duration: 10, ease: "linear", onUpdate: updateHUD });
+  } else {
+    st.bv = 0;
+  }
+  
+  st.ctl = Math.min(100, 95);
+  st.lastRelief = st.time;
+}
+
+/* the leak ladder:
+   ctl >15        — sealed
+   ctl 10–15      — leak zone: spurts roll each beat; any spurt stains the record
+   ctl <10 +150%  — instant, total loss (the loaded end-state has no mercy)
+   ctl <10 under  — escalating heavy leaks: survivable, scarring            */
+function spasmCheck(watch){
+  // hard road: below 20% control, it simply ends. No roll. No mercy.
+  if (st.track==='hard' && st.ctl < CFG.hardDeathCtl){ ending('flood'); return true; }
+  const zone = st.track==='hard' ? [CFG.hardDeathCtl, CFG.hardDeathCtl+8] : CFG.leakZone;
+  if (st.ctl < zone[0]){
+    if (st.bv >= target()){ ending('flood'); return true; }
+    const leak = Math.min(st.bv, RI(CFG.heavyLeak[0], CFG.heavyLeak[1]));
+    st.bv -= leak; st.leakedMl += leak; st.leaks++;
+    st.ctl = Math.min(100, st.ctl+3);
+    addGG(-CFG.ggLeak-4); setFace('😳',2400);
+    if (watch>0) addSus(14+watch*4);
+    diary(`A heavy leak at ${fmtClock(st.time)} — ${leak} ml lost in one shuddering wave. The lacing hid the worst of it. Barely.`);
+    toast('Control fails in a hot, heavy wave — she clamps back mid-disaster, shaking.');
+    return true;
+  }
+  if (st.ctl <= zone[1] && rng() < CFG.leakChance){
+    const leak = Math.min(st.bv, RI(CFG.leakMl[0], CFG.leakMl[1]));
+    st.bv -= leak; st.leakedMl += leak; st.leaks++;
+    addGG(-CFG.ggLeak);
+    if (watch>0) addSus(10+watch*4);
+    diary(`A spurt escaped at ${fmtClock(st.time)} — ${leak} ml. The perfect record is stained.`);
+    toast('A spasm wins a battle — a hot spurt escapes before she clamps down. She goes very, very still.');
+    return true;
+  }
+  return false;
+}
+function checkEnd(){
+  if (st.over) return true;
+  if (st.bv >= limit()*CFG.graceOver || st.ctl<=0){
+    return ending('flood');
+  }
+  if (st.sus >= CFG.susDiscover){
+    return ending('discovered');
+  }
+  return false;
+}
+
+/* ---------------- ENDINGS ---------------- */
+function holdHours(){ return (st.time - st.lastRelief)/60; }
+function ending(key){
+  st.over = true;
+  clearAuto();
+  // the record gate: a "win" route only counts if she delivered 150%+ to privacy, spotless
+  const winKeys = ['dawnwin','sneakwin','gardenwin'];
+  if (winKeys.includes(key)){
+    const record = st.bvAtRelief >= target() && st.leaks === 0;
+    if (!record) key = 'quiet';
+  }
+  let art,title,cls,story;
+  const heldMin = winKeys.includes(key)||key==='quiet'||key==='caught' ? st.lastHold : (st.time - st.lastRelief);
+  const hrs = Math.round(heldMin/60*10)/10;
+  if (key==='flood'){
+    art='💥'; cls='lose'; title="The flood finds her";
+    story = "It starts as one more spasm — and then it simply doesn't stop. Somewhere between one polite smile and the next, a day and a half of tea and good manners leaves her all at once, unstoppable, endless, warm. She stands very still through all of it, hands folded, eyes far away. The record book closes. The halo rolls away under the furniture.";
+  } else if (key==='discovered'){
+    art='👀'; cls='lose'; title="They know";
+    story = "No puddle. No stain. She held every drop — and it doesn't matter, because Mrs. Higgins takes her gently by the shoulder and says the eleven worst words in the language: 'Sweetheart... have you needed the bathroom this whole entire time?' Dry, victorious, and utterly seen. Bonnie would honestly have preferred the flood.";
+  } else if (key==='dawnwin'){
+    art='👑'; cls='win'; title="The perfect good girl";
+    story = `The front door clicks — Irina, off on her run. The house is empty. Bonnie walks (waddles, glides, survives) to the ensuite on legs made of prayer, and what follows is twenty minutes of the most colossal, most silent, most EARNED relief in recorded history. ${hrs} hours. Not a drop surrendered. Not a soul suspects. She washes her hands, looks in the mirror, and whispers it: 'Good girl.'`;
+  } else if (key==='sneakwin'){
+    art='😇'; cls='win'; title="Silent as a guilty thought";
+    story = `Twelve steps through a stranger's dark bedroom, each one placed like a chess move — and then the ensuite, the click of the lock, and relief so enormous she has to bite her sleeve. ${hrs} hours, delivered to porcelain with nobody the wiser. She creeps back past sleeping Irina and is asleep in minutes, smiling.`;
+  } else if (key==='gardenwin'){
+    art='🌿'; cls='win'; title="The garden keeps secrets";
+    story = `She will never speak of this. The moonlight, the hedge, the frantic unlacing, the sound of ${hrs} hours of good manners meeting a flowerbed at 2 AM. Good girls don't pee — and technically, no good girl was observed doing so. The rosebush disagrees, but the rosebush isn't talking.`;
+  } else if (key==='caught'){
+    art='🫣'; cls='lose'; title="Almost — and then the lamp clicked on";
+    story = "Halfway across the dark bedroom, a sleepy voice: 'Bonnie...? Oh my god, the bathroom, right — go, go!' Irina is KIND about it, which is infinitely worse. Relief comes thirty seconds later, gigantic and bittersweet, while her host giggles supportively through the door. The hold stands. The secret doesn't.";
+  } else if (key==='quiet'){
+    art='🌸'; cls='lose'; title="A quiet success — not the record";
+    const why = st.leaks>0 ? "but the record demanded 'not a drop', and the day took its drops"
+      : `but she carried ${Math.round(st.bvAtRelief)} ml to the porcelain — and the record demanded ${target()}`;
+    story = `Relief, privacy, dignity — by any sane measure, a victory. She even smiles at the mirror. But Bonnie doesn't keep sane measures: ${why}. ${hrs} hours of flawless manners, filed under 'almost'. Tomorrow, the record will still be waiting.`;
+  } else if (key==='asked'){
+    art='🙏'; cls='lose'; title="She asked";
+    story = "At breakfast, in front of everyone, in a small clear voice: 'Could I possibly use the bathroom?' Nine words. Mrs. Higgins practically carries her upstairs. The relief is oceanic and the shame is a small stone she will keep in her pocket forever. Good girls don't ask. Today, one did.";
+  }
+  showEnding(art,cls,title,story,key);
+}
+function grade(key){
+  const win = ['dawnwin','sneakwin','gardenwin'].includes(key);   // only reachable with the record intact
+  let g;
+  if (win && st.gg>=80 && st.sus<50) g = key==='dawnwin' ? '👑 PERFECT GOOD GIRL' : '⭐ GOOD GIRL, GOLD STAR';
+  else if (win) g='😇 GOOD GIRL — THE RECORD STANDS';
+  else if (key==='quiet') g='🌸 A GOOD GIRL, TECHNICALLY';
+  else if (key==='caught') g='🫣 SO NEARLY A GOOD GIRL';
+  else if (key==='asked') g='🙏 A GIRL WHO ASKED';
+  else if (key==='discovered') g='👀 A DRY, RUINED GIRL';
+  else g='💥 NOT TODAY, GOOD GIRL';
+  return g;
+}
+function showEnding(art,cls,title,story,key){
+  show('#scr-over');
+  $('#over-art').textContent = art;
+  const h=$('#over-title'); h.textContent=title; h.className=cls;
+  $('#over-story').textContent = story;
+  const heldFinal = st.lastHold>0 && st.time-st.lastRelief<30 ? st.lastHold : st.time-st.lastRelief;
+  const rows=[
+    ['Total hold', fmtDur(Math.max(0,Math.round(heldFinal)))],
+    ['Delivered to privacy', st.bvAtRelief>0 ? Math.round(st.bvAtRelief)+' ml'+(st.bvAtRelief>=target()?' 👑':'') : '—'],
+    ['The record line', target()+' ml'+(st.track==='hard'?' (HARD ROAD)':'')],
+    ['Peak volume', Math.round(st.peakMl)+' ml'],
+    ['Leaks', st.leaks+' ('+Math.round(st.leakedMl)+' ml)'],
+    ['😇 Good Girl', Math.round(st.gg)+'%'],
+    ['👀 Suspicion', Math.round(st.sus)+'%'],
+    ['Drinks politely accepted', st.drinksAccepted],
+    ['Halo possessions', st.possessed],
+    ['Times noticed', st.noticed]
+  ];
+  let html = rows.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')
+    + `<div class="grade">${grade(key)}</div>`;
+  if (st.diary.length){
+    html += `<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px;max-width:460px">
+      <div style="font-size:.72rem;letter-spacing:.18em;color:#c8a8b8;margin-bottom:8px">📖 HER DIARY — WHAT THE DAY REALLY DID</div>`
+      + st.diary.map(d=>`<div style="font-size:.8rem;color:#c8b4c2;font-style:italic;padding:3px 0;font-family:var(--font-serif)">— ${d}</div>`).join('')
+      + `</div>`;
+  }
+  $('#scorecard').innerHTML = html;
+  if (G){ G.from('#scorecard .row',{opacity:0,x:-20,stagger:.1,delay:.3});
+    G.from('#scorecard .grade',{scale:0,duration:.6,delay:1,ease:'back.out(2)'}); }
+}
+/* ================= END ENGINE CORE ================= */
+
+/* ================= RUNNER & UI ================= */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  if (G) G.fromTo(id,{opacity:0},{opacity:1,duration:.45}); }
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg;
+  if (G){ G.killTweensOf(t); G.fromTo(t,{y:-90,opacity:0},{y:0,opacity:1,duration:.4,ease:'back.out(1.4)'});
+    G.to(t,{y:-90,opacity:0,duration:.4,delay:3,ease:'power2.in'}); }
+}
+
+function curCh(){ return CH[st.chI]; }
+function curBeat(){ return curCh().beats[st.beatI]; }
+function watchNow(){ const b=curBeat(); return b && b.watch!=null ? b.watch : curCh().watchBase; }
+
+function updateHUD(){
+  $('#clock').textContent = fmtClock(st.time);
+  // itinerary
+  const it=$('#itin'); it.innerHTML='';
+  CH.forEach((c,i)=>{
+    if(i>0){ const l=document.createElement('div'); l.className='itin-link'+(i<=st.chI?' done':''); it.appendChild(l); }
+    const n=document.createElement('div');
+    n.className='itin-node'+(i<st.chI?' done':i===st.chI?' cur':'');
+    n.textContent=c.icon; n.title=c.title; it.appendChild(n);
+  });
+  $('#ch-title').textContent = curCh().title;
+  const remain = CH.slice(st.chI+1).reduce((a,c)=>a+c.planMin,0) + Math.max(0, curCh().planMin - st.chElapsed);
+  $('#eta').innerHTML = `<b>${fmtDur(remain)}</b> TO THE ENSUITE`;
+  $('#hold-clock').innerHTML = `HOLDING FOR <b>${fmtDur(Math.max(0,st.time-st.lastRelief))}</b>`;
+  /* ctlShow computed below with fog — bars set after */
+  $('#gg-val').textContent = Math.round(st.gg)+'%';
+  $('#bar-gg .bar-inner').style.width = st.gg+'%';
+  $('#sus-val').textContent = Math.round(st.sus)+'%';
+  $('#bar-sus .bar-inner').style.width = st.sus+'%';
+  // fog of desperation: her instruments lie exactly when it matters
+  const bd0 = band();
+  let mlTxt = Math.round(st.bv)+' ml';
+  if (bd0==='desperate') mlTxt = '≈ '+(Math.round(st.bv/100)*100)+' ml';
+  if (bd0==='critical')  mlTxt = 'a LOT';
+  $('#bv-label').childNodes[0].nodeValue = mlTxt;
+  $('#bv-adj').textContent = adj();
+  let ctlShow = st.ctl;
+  if (bd0==='desperate') ctlShow = Math.min(100, st.ctl+8);    // her guess runs optimistic
+  if (bd0==='critical')  ctlShow = Math.min(100, st.ctl+14);
+  $('#ctl-val').textContent = Math.round(ctlShow)+'%'+(bd0==='critical'?' ?':'');
+  $('#bar-ctl .bar-inner').style.width = ctlShow+'%';
+  const b = band();
+  const v = {calm:0,uncomfortable:0,tense:.1,desperate:.3,critical:.55}[b];
+  if (G) G.to('#vignette',{opacity:v,duration:.8}); else $('#vignette').style.opacity=v;
+  if (BGuni){ BGuni.uTen.value = {calm:0,uncomfortable:.2,tense:.45,desperate:.75,critical:1}[b];
+    BGuni.uRed.value = Math.min(1, Math.max(0,(press()-0.8)/0.25)); }
+  $('#status-line').textContent = st.track==='hard'
+    ? (b==='critical' ? '⚡ BEYOND the beyond. Every second is a miracle.' : '🔥 The hard road. There is no comfortable ever again.')
+    : {
+    calm:'Composed. Immaculate. A portrait of a guest.',
+    uncomfortable:'A little full. Nothing a smile can\'t hide.',
+    tense:'She is managing. Actively. Constantly.',
+    desperate:'Every movement is choreography now.',
+    critical:'One wrong breath from catastrophe.'
+  }[b];
+  $('#bv-label').classList.toggle('frantic', st.track==='hard' || b==='critical');
+  updateFace();
+  updateBlobTargets();
+}
+
+function renderCope(){
+  // retired: the coping pills are gone — control is fought for in WAVES now
+  const bar=$('#cope-bar');
+  bar.classList.remove('on');
+  return;
+  /* dead code below, kept inert */
+  bar.innerHTML='';
+  const w = watchNow();
+  for(const c of CFG.copeSet){
+    const uses = st.copeUses[c.id] ?? 0;
+    const b=document.createElement('button'); b.className='cope-btn';
+    const eyeCost = c.sus>0 && w>0 ? `<span class="eye">👀+${c.sus*w>9?Math.round(c.sus*w/2):c.sus}</span>` : '';
+    b.innerHTML = `${c.label}<span class="uses">×${uses}</span>${eyeCost}`;
+    b.disabled = uses<=0;
+    b.onclick = ()=>{
+      st.copeUses[c.id]--;
+      st.ctl = Math.min(100, st.ctl + c.ctl);
+      if (w>0 && c.sus>0) addSus(Math.max(1, Math.round(c.sus*w/2)));
+      toast(pick(["A few seconds of control, purchased.","It helps. Quietly. Barely.","She rides the wave down. This one."]));
+      updateHUD(); renderCope();
+    };
+    bar.appendChild(b);
+  }
+}
+
+/* ---------- choice builders ---------- */
+function addC(list, x, fn, o={}){ list.push({x, fn, ...o}); }
+/* intention-choices: the player picks a social goal — her politeness decides the cost */
+function drinkPattern(list, d){
+  addC(list, "Be an absolute delight about it.", ()=>{
+    let ml = d.ml, refill = false;
+    if (rng()<0.35){ ml = Math.round(ml*1.5); refill = true; }   // doting hosts refill delights
+    st.stomach += ml; st.drinksAccepted++; addGG(d.gg||4);
+    if (st.sus>30){ st.sus = Math.max(susFloor(), st.sus-12);
+      toast('Nobody who drinks like THAT could possibly need the bathroom. The watching eyes soften.'); }
+    else toast(pick(['Warmth, gratitude, another sip. The hosts glow.','She is SUCH a delight. Everyone says so.']));
+    diary(`${d.label}: ${d.ml} ml${refill?' — plus a refill she never registered. '+ml+' ml, total':''}.`);
+    resolveBeat({min:curBeat().min});
+  }, {icon:'😇', tag:'DELIGHT'});
+  addC(list, "Be pleasant — but pace myself.", ()=>{
+    let ml = Math.round(d.ml*0.5), topped = false;
+    if (rng()<0.30){ ml = Math.round(d.ml*0.85); topped = true; }  // cups get topped up mid-sentence
+    st.stomach += ml; st.drinksAccepted++;
+    if (topped) diary(`She paced herself — but the cup was quietly topped up mid-conversation. ${ml} ml, not the half she planned.`);
+    if (st.sus>30) st.sus = Math.max(susFloor(), st.sus-6); else addSus(1);
+    toast('Measured sips between sentences. Probably measured. Roughly.');
+    resolveBeat({min:curBeat().min});
+  }, {icon:'🫖', tag:'PACE'});
+  addC(list, "Risk a flicker of rudeness — barely touch it.", ()=>{
+    st.stomach += Math.round(d.ml*0.15);
+    addGG(-CFG.ggRefuse); addSus(14);   // NOTHING says 'full bladder' like refusing a drink
+    diary(`She refused ${d.label} — and watched the thought cross their faces: 'why would a thirsty traveler refuse...?'`);
+    toast(pick([
+      "A beat of silence. 'Not thirsty, love? After that flight?' The eyes linger a moment too long.",
+      "'You've barely touched anything all day... are you feeling alright?' Suspicion blooms like ink in water."
+    ]));
+    resolveBeat({min:Math.round(curBeat().min*0.85)});
+  }, {icon:'🙅‍♀️', tag:'RISK'});
+}
+function offerPattern(list, o){
+  // there is no yes. Good girls don't pee — the only question is HOW she says no.
+  addC(list, `"I'm fine!" — bright, instant, fatal. The door of mercy swings shut.`, ()=>{
+    addGG(3);
+    toast('The offer passes. The Good Girl brightens. The pressure files a formal complaint.');
+    resolveBeat({min:curBeat().min});
+  }, {icon:'😇', tag:'DECLINE'});
+  addC(list, "Hover on the edge of yes... then wave them on. Almost. ALMOST.", ()=>{
+    st.ctl = Math.max(0, st.ctl-3); addGG(1); addSus(3);
+    toast("The hesitation lasts a beat too long. Someone's eyebrow moves.");
+    resolveBeat({min:curBeat().min});
+  }, {icon:'🫠', tag:'WAVER'});
+  addC(list, "Make myself useful instead — busy hands, busy bladder-free thoughts.", ()=>{
+    st.ctl = Math.max(0, st.ctl-2); st.sus = Math.max(susFloor(), st.sus-3);
+    toast('She reorganizes a luggage cart nobody asked her to. Industrious. Suspiciously industrious. No — admirably.');
+    resolveBeat({min:(curBeat().min||15)+6});
+  }, {icon:'🧳', tag:'DEFLECT'});
+}
+
+/* ---------- desperation waves: real-time fights for control ---------- */
+let waveTimer = null;
+function shouldWave(){
+  st.beatCount = (st.beatCount||0)+1;
+  if (press() < 0.6) return false;
+  if (st.beatCount - (st.lastWaveBeat||-9) < 3) return false;
+  if (rng() < (press()-0.52)*1.5){ st.lastWaveBeat = st.beatCount; return true; }
+  return false;
+}
+function startWave(done, opts={}){
+  const hardW = st.track==='hard';
+  const A = st.ctl, B = opts.deadly ? (opts.floorMin||14) : Math.max(hardW?32:30, A-20);
+  if (globalThis.__AUTOWAVE || !G){   // headless / no-GSAP fallback
+    if (opts.deadly){
+      if (rng() < (opts.surv!=null?opts.surv:0.7)){ st.ctl = Math.max(B+2, st.ctl-RI(4,10)); return done(); }
+      st.ctl = B; return ending('flood');
+    }
+    const drop = RI(2, hardW?8:14);
+    st.ctl = Math.max(B, st.ctl - drop);
+    if (drop<5) st.ctl = Math.min(100, st.ctl+2);   // rode it out
+    if (st.ctl <= B+0.5) diary(`A wave broke her at ${fmtClock(st.time)} — control gave way to ${Math.round(B)}%.`);
+    return done();
+  }
+  setFace('😫', 7000);
+  const veil = $('#wave-veil'); veil.classList.add('on');
+  $('#wave-lineA').style.left = A+'%';
+  $('#wave-lineB').style.left = B+'%';
+  // hiding gets harder as the day wears on: fewer moves remain to her
+  const all = [{l:'HOLD YOUR BREATH', g:0.9},{l:'CLENCH', g:1.5},{l:'CROSS YOUR LEGS', g:1.2}];
+  const btns = all.slice(0, st.chI>=6 ? 1 : st.chI>=3 ? 2 : 3);
+  const wrap = $('#wave-btns'); wrap.innerHTML='';
+  const fatigue = {};
+  for(const bt of btns){
+    fatigue[bt.l]=1;
+    const b=document.createElement('button'); b.className='wave-btn'; b.textContent=bt.l;
+    b.onclick=()=>{ st.ctl = Math.min(100, st.ctl + bt.g*fatigue[bt.l]); fatigue[bt.l]*=0.93;
+      if(G) gsap.fromTo(b,{scale:1.08},{scale:1,duration:.15}); };
+    wrap.appendChild(b);
+  }
+  // slower drain for easier difficulty
+  const drainPerTick = (1.1 + press()*1.9)*(opts.drainMult||1)/25;   // per 100ms
+  const waveDur = opts.dur || 6500;
+  let elapsed = 0, ended = false;
+  const finish = (failed)=>{
+    if (ended) return; ended = true;
+    clearInterval(waveTimer); veil.classList.remove('on');
+    if (failed && opts.deadly){ st.ctl = B; return ending('flood'); }
+    if (failed){ st.ctl = B;
+      diary(`A wave broke her at ${fmtClock(st.time)} — control crashed to ${Math.round(B)}%.`);
+      toast('The wave wins. When it finally passes, something fundamental has been spent.');
+    } else if (st.ctl > A-6){ st.ctl = Math.min(100, st.ctl+2);
+      toast('She rides it out — knuckles white, face serene. Barely a flicker showed.'); }
+    else toast('The wave passes. She survived it. Cost: everything it took.');
+    const w = watchNow(); if (w>0) addSus(w*2);
+    updateHUD();
+    done();
+  };
+  waveTimer = setInterval(()=>{
+    elapsed += 100;
+    st.ctl = Math.max(0, st.ctl - drainPerTick);
+    $('#wave-fill').style.width = st.ctl+'%';
+    if (st.ctl <= B) return finish(true);
+    if (elapsed >= waveDur) return finish(false);
+  }, 100);
+  if (G){ gsap.fromTo('#wave-card',{scale:.9,opacity:0},{scale:1,opacity:1,duration:.3,ease:'back.out(1.6)'}); }
+}
+
+/* ---------- NPC notice events: they're starting to KNOW ---------- */
+function renderNotice(level){
+  updateHUD(); setFace('🫣', 3200);
+  $('#kicker').textContent = 'SOMEONE NOTICES';
+  $('#watchers').textContent = watcherLine(Math.max(1,watchNow()));
+  const bd = band(), ch = curCh().id;
+  // WHO notices depends on where she is; WHAT they see depends on how full she is
+  const NPC = {
+    suit:    {who:"Mom", drink:"another smoothie", ml:300},
+    airport: {who:"a kind stranger in the queue", drink:"a sip from her spare water", ml:200},
+    flight:  {who:"the air hostess, crouching to eye level", drink:"a cup of water 'for the circulation'", ml:250},
+    imm:     {who:"the officer, pen pausing", drink:"water from the courtesy fountain", ml:200},
+    hosts:   {who:"Mrs. Higgins", drink:"more tea", ml:400},
+    night2:  {who:"Irina, popping her head in", drink:"warm milk 'to help you sleep'", ml:300}
+  }[ch] || {who:"someone", drink:"a drink", ml:300};
+  const seen = {
+    calm:"'You seem a little... restless?'", uncomfortable:"'You keep shifting about — everything alright?'",
+    tense:"'You've crossed and uncrossed your legs four times, love. Are you quite alright?'",
+    desperate:"'You're practically VIBRATING, sweetheart. Be honest — are you unwell?'",
+    critical:"'Sweetheart, you've gone pale and you're trembling. What is going ON?'"
+  }[bd];
+  const t = `It happens in a lull between sentences. ${NPC.who.charAt(0).toUpperCase()+NPC.who.slice(1)} looks at her — kindly, terribly: ${seen}`;
+  const admitX = {
+    calm:"Admit to 'a little travel fatigue.' Vague. Deniable.",
+    uncomfortable:"Admit it. A little. '...I might need a moment. Soon-ish. Maybe.'",
+    tense:"Admit — carefully. 'I could... use a stop. At some point. No rush!'",
+    desperate:"Admit, voice tight: 'I... yes. Soon. Please.'",
+    critical:"Admit — barely a whisper, knuckles white on the armrest: '...please.'"
+  }[bd];
+  const ggCost = {calm:8,uncomfortable:10,tense:12,desperate:14,critical:16}[bd];
+  paint(t, [
+    {x:admitX, icon:'🫢', fn:()=>{
+      addGG(-ggCost); st.sus = Math.max(susFloor(), st.sus-20);
+      if (st.track!=='hard') st.ctl = Math.max(0, st.ctl-4);
+      if (ch==='flight'){ st.stomach += 150; }
+      diary(`She half-admitted her need at ${fmtClock(st.time)} — and the universe answered with an obstacle, not a bathroom.`);
+      toast(pick([
+        "'Oh! Of course, love — oh dear, it's OUT OF ORDER just now. Can you hold on a little longer?'",
+        "'Oh sweetie! Soon, I promise — it's just not possible right this minute.'",
+        ch==='flight' ? "'The seatbelt sign is on, I'm so sorry — here, some water while you wait.'" :
+        "'Ah — occupied, I'm afraid. Any minute now. Any minute!'"
+      ]));
+      advanceBeat(); }, tag:'ADMIT'},
+    {x:`'Me? I'm WONDERFUL. Actually — is there ${NPC.drink}? I'd LOVE some.'`, icon:'😇', cls:'danger-opt', fn:()=>{
+      st.stomach += NPC.ml; st.drinksAccepted++;
+      st.sus = Math.max(susFloor(), st.sus-15); addGG(3);
+      diary(`Accused by kind eyes at ${fmtClock(st.time)}, she ordered ${NPC.drink} as an alibi. ${NPC.ml} ml of pure misdirection.`);
+      toast('She drinks the alibi down, smiling. Nobody that thirsty could possibly be full. Right?');
+      advanceBeat(); }, tag:'DOUBLE DOWN'}
+  ]);
+}
+
+/* ---------- beat resolution ---------- */
+function resolveBeat(res){
+  const w = watchNow();
+  const mins = res.min!=null ? res.min : 15;
+  tick(mins);
+  st.chElapsed += mins;
+  decay(mins, w);
+  spasmCheck(w);
+  if (checkEnd()) return;
+  // stealth wake roll (chapter 1)
+  if (curCh().id==='night' && st.noise>0 && rng()*100 < st.noise*0.8){
+    st.noise = Math.max(0, st.noise-20);
+    return renderStir();
+  }
+  if (st.sus>=75 && st.noticeLevel<2){ st.noticeLevel=2; return renderNotice(2); }
+  if (st.sus>=50 && st.noticeLevel<1){ st.noticeLevel=1; return renderNotice(1); }
+  if (shouldWave()) return startWave(()=>{ if(!checkEnd()) advanceBeat(); });
+  advanceBeat();
+}
+function advanceBeat(){
+  st.g = null;
+  st.sinceMini = (st.sinceMini==null ? 2 : st.sinceMini+1);
+  st.beatI++;
+  if (st.beatI >= curCh().beats.length) return nextChapter();
+  // skip flush beat if she never went
+  const nb = curBeat();
+  if (nb && nb.skipIfHeld && (st.heldAllNight || !st.relievedAtHome)){
+    st.beatI++;
+    if (st.beatI >= curCh().beats.length) return nextChapter();
+  }
+  autosave(); render();
+}
+function nextChapter(){
+  st.chI++; st.beatI=0; st.chElapsed=0; st.noise=0;
+  // snap the world to the itinerary: chapters begin at their scheduled hour
+  const a = CH[st.chI] && CH[st.chI].anchor;
+  if (a && st.time < a) st.time = a;
+  if (st.track==='hard'){ st.ctl = Math.min(100, st.ctl+8); }   // second wind: another leg survived
+  copeGain();   // reserves BANK — restraint early buys survival at dawn
+  if (st.chI >= CH.length-1){ /* 'dawn' pseudo-chapter — resolved by finale */ return; }
+  autosave(); render();
+}
+
+/* stealth stir interstitial */
+function renderStir(){
+  updateHUD(); renderCope();
+  $('#kicker').textContent = 'THE HOUSE STIRS';
+  $('#watchers').textContent = '🌙 A sound. Somewhere. Someone.';
+  paint("A floorboard answers somewhere above. A mattress creaks. The whole house holds its breath with me — my hand clamps between my thighs, my heart in my ears.", [
+    {x:"FREEZE. Become furniture. Wait for the silence to heal.", icon:'🫥', fn:()=>{
+      st.ctl=Math.max(0,st.ctl-4); st.noise=Math.max(0,st.noise-25); tick(4);
+      toast('A minute of statue-hood. The silence knits itself back together.');
+      if (checkEnd()) return; st.beatI++;
+      if (st.beatI>=curCh().beats.length) return nextChapter();
+      autosave(); render(); }},
+    {x:"Push on — I am SO close. Fortune favors the desperate.", icon:'💨', fn:()=>{
+      if (rng()<0.45){
+        if (!st.relievedAtHome){ st.heldAllNight = true; st.track = 'hard'; }  // only unrelieved girls get drafted
+        toast('"Bonnie...?" — Chloe\'s sleepy voice. ABORT. She glides back to bed, heart pounding.');
+        st.chI=1; st.beatI=0; st.chElapsed=0; st.noise=0; resetCope();
+        tick(20); autosave(); render();
+      } else {
+        st.noise=Math.max(0,st.noise-10); toast('Nothing. NOTHING. Blessed silence. Onward.');
+        st.beatI++; if (st.beatI>=curCh().beats.length) return nextChapter();
+        autosave(); render();
+      }}}
+  ]);
+}
+
+/* ---------- finale routes ---------- */
+function runFinale(route){
+  st.finRoute = route;
+  if (route==='sneak'){
+    paintFinale("Her door opens on hinges that mercifully agree to cooperate. Inside: darkness, slow breathing, a floor strewn with clothes — a minefield in a nightgown. Twelve steps.", [
+      {x:"Step. Pause. Step. Read the breathing like sonar.", icon:'🤫', fn:()=>{
+        tick(8); decay(8,0); if (checkEnd()) return;
+        if (rng()<0.30){ relief('caught'); return ending('caught'); }
+        paintFinale("Halfway. Her breathing catches — rolls over — settles. The ensuite door is an arm's length away, outlined in moonlight.", [
+          {x:"The last three steps. Slow as continental drift.", icon:'🐢', fn:()=>{
+            tick(6); decay(6,0); if (checkEnd()) return;
+            if (rng()<0.18){ relief('caught'); return ending('caught'); }
+            relief('ensuite'); return ending('sneakwin'); }},
+          {x:"Just GO — two quick steps and in.", icon:'💨', fn:()=>{
+            tick(2); if (rng()<0.4){ relief('caught'); return ending('caught'); }
+            relief('ensuite'); return ending('sneakwin'); }}
+        ]);
+      }},
+      {x:"...no. Back out. The dawn plan. The RECORD plan.", icon:'😇', fn:()=>runFinale('dawn')}
+    ]);
+  } else if (route==='dawn'){
+    let leg=0;
+    const legs=[
+      "3 AM. She sits on the edge of the bed, hands pressed flat on her thighs, and negotiates with her own anatomy in fifteen-minute installments.",
+      "4 AM. The exact hour she held through at home, a lifetime ago yesterday. Her body remembers. Her body is FURIOUS.",
+      "5:30 AM. Grey light. Every spasm now arrives with paperwork. Somewhere below, a kettle — Mrs. Higgins is an early riser. Voices. Warmth. Torture.",
+    ];
+    const next=()=>{
+      if (leg>=legs.length){
+        if (st.runLost){
+          paintFinale("6:58 AM. She listens for the trainers on the gravel... nothing. 7:15. Nothing. Then Irina's door opens and a tousled head appears, yawning: 'Morning!! Ugh, skipping my run — we were up SO late. Pancakes?'\n\nThe empty house she gambled everything on... isn't coming.", [
+            {x:"Through her room NOW while she's downstairs cracking eggs — last chance.", icon:'🏃‍♀️', fn:()=>{
+              tick(6); decay(6,0); if (checkEnd()) return;
+              if (rng()<0.45) return ending('caught');
+              relief('ensuite'); return ending('dawnwin'); }},
+            {x:"Go down to breakfast. Endure. Wait for the house to empty. However long it takes.", icon:'😤', fn:()=>{
+              tick(110); decay(110,2); spasmCheck(2);
+              if (checkEnd()) return;
+              paintFinale("Breakfast is warm, kind, and everlasting. Tea is poured — she cannot, CANNOT — she 'saves it for after'. At 9:40 Mrs. Higgins finally announces errands, Irina tags along, and the door shuts on an empty house and a girl vibrating like a struck bell.", [
+                {x:"The stairs. The ensuite. The end of the longest journey of her life.", icon:'👑', fn:()=>{ relief('dawn'); return ending('dawnwin'); }}
+              ]); }},
+            {x:"Ask. Just... ask. At breakfast. Out loud. Like a person.", icon:'🙏', cls:'danger-opt', fn:()=>{
+              tick(15); relief('asked'); return ending('asked'); }}
+          ]); return;
+        }
+        paintFinale("6:58 AM. Footsteps on gravel — Irina's trainers, receding toward the park. The front door clicks. The house is empty.\n\nThe ensuite is unguarded. Her legs barely answer. The mirror catches a girl at the absolute end of herself — and utterly undefeated.", [
+          {x:"Walk to it. Slowly. Regally. She has EARNED this porcelain.", icon:'👑', fn:()=>{ relief('dawn'); return ending('dawnwin'); }}
+        ]); return;
+      }
+      // each dawn hour is a WAVE you must actually survive — longer and meaner than any before,
+      // and this deep in the night, losing the fight IS losing everything
+      paintFinale(legs[leg]+"\n\nA wave is building. A big one. There is nowhere to hide from this hour except through it.", [
+        {x:"Face it. Fight the wave through this whole hour — win, or flood.", icon:'⚡', cls:'danger-opt', tag:'DEADLY WAVE', fn:()=>{
+          tick(75); decay(40,0);
+          if (checkEnd()) return;
+          const L = leg;
+          startWave(()=>{ if (checkEnd()) return; leg++; next(); },
+            {deadly:true, dur:8000+L*2600, drainMult:1.15+L*0.35, floorMin:13, surv:0.8-L*0.2});
+        }},
+        {x:"This is insane — go NOW, through her room, before I shatter.", icon:'🏃‍♀️', fn:()=>runFinale('sneak')}
+      ]);
+    };
+    next();
+  } else if (route==='garden'){
+    paintFinale("The window opens on cool night air and a dark, dew-heavy garden. The hedge by the back fence is thick, private, and — crucially — downhill. This is either genius or the single least good-girl idea of her entire life.", [
+      {x:"Down the trellis. Behind the hedge. May God and the rosebush forgive me.", icon:'🌿', fn:()=>{
+        tick(10); decay(10,0); if (checkEnd()) return;
+        if (rng()<0.35){
+          addSus(15); st.ctl=Math.max(0,st.ctl-6);
+          toast("A neighbor's security light SNAPS on. She flattens against the wall like a gecko, heart detonating — then creeps back up, un-relieved.");
+          if (checkEnd()) return;
+          return runFinale('sneak');
+        }
+        relief('garden'); addGG(-10);
+        return ending('gardenwin'); }},
+      {x:"...I am not a garden girl. The bedroom route. Final answer.", icon:'🚪', fn:()=>runFinale('sneak')}
+    ]);
+  }
+}
+function paintFinale(text, choices){
+  updateHUD(); renderCope();
+  $('#kicker').textContent = 'THE FIRST NIGHT';
+  $('#watchers').textContent = watcherLine(0);
+  paint(text, choices);
+}
+
+/* ---------- the possessing halo: above 80 Good Girl, she may act without you ---------- */
+function renderPossession(b){
+  st.possessed++;
+  updateHUD(); renderCope();
+  $('#kicker').textContent = curCh().title.toUpperCase()+' · '+fmtClock(st.time);
+  $('#watchers').textContent = watcherLine(watchNow());
+  let did;
+  if (b.drink){
+    const ml = Math.round(b.drink.ml*1.2);
+    st.stomach += ml; st.drinksAccepted++; addGG(3);
+    diary(`The halo took over: ${b.drink.label} — all ${ml} ml — accepted before she had decided anything.`);
+    did = "Before she has decided anything, her hand is already lifting the cup. Her mouth is already saying 'thank you, it's lovely.' She watches herself drink ALL of it from somewhere slightly outside her own body.\n\nGood girls don't hesitate.";
+  } else {
+    addGG(3);
+    diary(`The halo answered for her: 'I'm fine!' — a bathroom offer declined on pure autopilot at ${fmtClock(st.time)}.`);
+    did = "'I'm fine!' The words are out — bright, instant, automatic — before the offer has even finished being made. She hears herself say it. She watches the door of mercy swing gently shut.\n\nGood girls don't hesitate.";
+  }
+  if (G) G.fromTo('#bar-gg',{boxShadow:'0 0 24px rgba(232,192,106,.8)'},{boxShadow:'0 0 0 rgba(0,0,0,0)',duration:1.6});
+  // the halo answered the whole scene for her — no follow-up question, the day just moves on
+  toast("Good girls don't hesitate. The cup is already empty.");
+  resolveBeat({min:b.min});
+}
+
+/* ============ MINI-GAMES: five ways to fight, scaled by desperation ============ */
+const VOLLEY_SETS = {
+  chloe:[
+    {q:"'Hold STILL or the lacing goes crooked! So — are you excited?? Scale of one to ten!'", a:["'Eleven!'", "'Nervous-excited.'"]},
+    {q:"'You'll video call every day right? RIGHT?'", a:["'Every single day.'","'When the wifi allows!'"]},
+    {q:"'Does it feel weird? Leaving? Be honest.'", a:["'A little. Don't tell Mom.'","'Ask me at the airport.'"]}
+  ],
+  officer:[
+    {q:"'Purpose of visit?'", a:["'Exchange program!'","'Study. Cultural exchange.'"]},
+    {q:"'Duration of stay?'", a:["'One semester.'","'Four months, sir.'"]},
+    {q:"'Anything to declare?'", a:["'No, sir.'","'Only gifts for my hosts!'"]},
+    {q:"He looks at her. Just... looks.", a:["Hold the pleasant smile.","Tilt head. Friendly. Calm."]}
+  ],
+  irina:[
+    {q:"'Okay but what's your TYPE? Wait let me guess—'", a:["'Tall, kind, terrible at texting.'","'Guess away!'"]},
+    {q:"'Favorite thing about home? GO. No thinking!'", a:["'My sister. Don't tell her.'","'Rain on the roof.'"]},
+    {q:"'You're doing the quiet mysterious thing again!!'", a:["'I'm PACING myself socially.'","'Jetlag, I swear.'"]},
+    {q:"'First impression of me. Be brutal.'", a:["'Loud. Wonderful. Loud.'","'A glittery ambush.'"]}
+  ],
+  higgins:[
+    {q:"'And your mother — she works in...?'", a:["'Insurance. She loves it, weirdly.'","'She keeps the family running.'"]},
+    {q:"'Any allergies, love? Anything you can't eat?'", a:["'Not a single one!'","'I eat everything, promise.'"]},
+    {q:"'And you'll want breakfast at... seven? Eight?'", a:["'Whatever suits the house!'","'Eight is lovely.'"]}
+  ]
+};
+function miniIntensity(){
+  let i = 1;
+  if (press()>0.72 || st.track==='hard') i++;
+  if (press()>0.92 || (st.track==='hard' && st.bv>2900) || st.chI>=5) i++;
+  return Math.min(3,i);
+}
+function miniOpen(title, sub){
+  $('#mini-title').textContent = title;
+  $('#mini-sub').textContent = sub;
+  $('#mini-stage').innerHTML=''; $('#mini-btns').innerHTML='';
+  $('#mini-veil').classList.add('on');
+  if (G) gsap.fromTo('#mini-card',{scale:.9,opacity:0},{scale:1,opacity:1,duration:.3,ease:'back.out(1.6)'});
+}
+function miniClose(){ $('#mini-veil').classList.remove('on'); }
+let miniTimer=null;
+function miniEnd(ok, fx, done){
+  clearInterval(miniTimer); miniTimer=null; miniClose();
+  fx(ok); updateHUD();
+  done(ok);
+}
+function runMini(type, ctx, done){
+  const I = miniIntensity();
+  const w = watchNow();
+  if (globalThis.__AUTOWAVE || !G){   // headless fallback mirrors real reward economics
+    const ok = globalThis.__MINIWIN ? true : rng() < (0.7 - I*0.1);
+    if (ok){ st.ctl=Math.min(100,st.ctl+3); st.sus=Math.max(susFloor(),st.sus-3); }
+    else { addSus(2+I*2); st.ctl=Math.max(0,st.ctl-I); }
+    return done(ok);
+  }
+  if (type==='mash'){
+    // frantic single-button fight: fill the bar before it drains you dry
+    const theme = (ctx && ctx.mashTheme) || (ctx && ctx.drink ? 'cup' : 'descent');
+    const cfg = theme==='cup'
+      ? {t:'✋ PUT. THE CUP. DOWN.', s:'Her hand is rising on its own — MASH to force it back down!', btn:'FORCE IT DOWN', win:()=>{ setFace('😮‍💨',2000); toast('Her hand STOPS, an inch from her lips. She folds it back into her lap, trembling with victory.'); }, lose:()=>{}}
+      : {t:'🛬 RIDE THE DESCENT', s:'The pressure tilts and squeezes — MASH to hold the line all the way down!', btn:'HOLD THE LINE', win:()=>{ st.ctl=Math.min(100,st.ctl+5); toast('Wheels down. She rode every degree of that descent, knuckle by knuckle — and came out STRONGER.'); }, lose:()=>{ st.ctl=Math.max(0,st.ctl-3); toast('The descent wins a few rounds. She lands rattled, and rattled is expensive.'); }};
+    miniOpen(cfg.t, cfg.s);
+    const need = 8+3*I; let prog = 0; // Much lower click requirement for easier difficulty
+    $('#mini-stage').innerHTML = `<div id="shrink-bar" style="width:0%"></div>
+      <div style="margin-top:10px;font-size:.95rem;font-weight:700;color:var(--gold)" id="ms-count">GO!</div>`;
+    const b=document.createElement('button'); b.className='mini-btn rose'; b.style.fontSize='1.2rem'; b.textContent=cfg.btn;
+    b.onclick=()=>{ prog+=1;
+      if (G) gsap.fromTo(b,{scale:1.07},{scale:1,duration:.08});
+      $('#shrink-bar').style.width = Math.min(100,prog/need*100)+'%';
+      $('#ms-count').textContent = Math.max(0,need-prog)+' to go';
+      if (prog>=need) miniEnd(true, cfg.win, done);
+    };
+    $('#mini-btns').append(b);
+    let tleft = 5200 - I*400;
+    miniTimer = setInterval(()=>{ tleft-=100;
+      prog = Math.max(0, prog-0.15);   // Slower fight back
+      $('#shrink-bar').style.width = Math.min(100,prog/need*100)+'%';
+      if (tleft<=0) miniEnd(false, cfg.lose, done);
+    },100);
+  }
+  else if (type==='spot'){
+    // the two-horned spot: control drains LIVE until you pick a poison
+    const cfg = ctx.spot || {title:'⚠️ ON THE SPOT', sub:'Pick — every second costs her.',
+      a:{l:'Ask for mercy', fx:'ask'}, b:{l:'Endure it', fx:'endure'}};
+    miniOpen(cfg.title, cfg.sub);
+    $('#mini-stage').innerHTML = `<div id="shrink-bar" style="width:${st.ctl}%"></div>
+      <div style="margin-top:10px;font-size:.85rem;color:var(--ink-dim)">her control, draining in real time...</div>`;
+    const pickOpt = (opt)=>{
+      miniEnd(true, ()=>{
+        if (opt.fx==='ask'){ addSus(8); addGG(-6); st.ctl=Math.min(100,st.ctl+3); setFace('🫣',2200);
+          toast("She asks. Softly. Kindly received — and REMEMBERED. 'Go easy? Of course, love... everything alright?'"); }
+        else { st.ctl=Math.max(0,st.ctl-RI(7,11)); setFace('😖',2200);
+          toast('She endures it without a sound. The cost is paid somewhere nobody can see. Yet.'); }
+      }, done);
+    };
+    for(const key of ['a','b']){
+      const o=cfg[key];
+      const b=document.createElement('button'); b.className='mini-btn'+(key==='b'?' rose':'');
+      b.style.fontSize='.9rem'; b.textContent=o.l;
+      b.onclick=()=>pickOpt(o); $('#mini-btns').append(b);
+    }
+    miniTimer = setInterval(()=>{
+      st.ctl = Math.max(0, st.ctl-0.25);
+      $('#shrink-bar').style.width = st.ctl+'%';
+      updateHUD();
+    },100);
+  }
+  else if (type==='rhythm'){
+    miniOpen('👣 SHUFFLE — CLAMP','Tap STEP each time the white dot is INSIDE the green zone. That\'s it. That\'s the dance.');
+    const beats = 4+2*I, speed = 1250 - I*200;
+    let hit=0, miss=0, t0=performance.now();
+    $('#mini-stage').innerHTML = `<div id="timing-bar"><div id="timing-zone" style="left:40%;width:20%"></div><div id="timing-dot"></div></div>
+      <div style="margin-top:12px;font-size:1rem;font-weight:700;color:var(--gold)" id="rh-count">0 / ${beats} steps</div>`;
+    const dot = $('#timing-dot');
+    const b=document.createElement('button'); b.className='mini-btn rose'; b.textContent='STEP';
+    b.onclick=()=>{
+      const ph = ((performance.now()-t0)%speed)/speed;
+      // Much wider window for rhythm check
+      if (Math.abs(ph-0.5)<0.30){ hit++; $('#rh-count').textContent=hit+' / '+beats+' steps';
+        if (G) gsap.fromTo('#timing-zone',{opacity:1},{opacity:.5,duration:.2,yoyo:true,repeat:1});
+        if (hit>=beats) miniEnd(true, ()=>{ st.sus=Math.max(susFloor(),st.sus-3); st.ctl=Math.min(100,st.ctl+3);
+          toast('Shuffle, clamp. Shuffle, clamp. The rhythm actually HELPS — the queue never suspects choreography.'); }, done);
+      } else { miss++; addSus(2); st.ctl=Math.max(0,st.ctl-1);
+        if (G) gsap.fromTo('#mini-card',{x:-4},{x:0,duration:.2});
+        if (miss>=3) miniEnd(false, ()=>{ toast('A stumble. A wobble. A glance from the person behind her.'); }, done);
+      }};
+    $('#mini-btns').append(b);
+    miniTimer = setInterval(()=>{
+      const ph = ((performance.now()-t0)%speed)/speed;
+      dot.style.left = (ph*96)+'%';
+    },16);
+  }
+  else if (type==='hold'){
+    miniOpen('🗿 PERFECT STILLNESS','PRESS AND HOLD. Do not release — no matter what twitches.');
+    const dur = 3500 + I*1200;
+    let held=false, t=0, ok=true;
+    $('#mini-stage').innerHTML = `<div id="shrink-bar" style="width:0%"></div>
+      <div style="margin-top:10px;font-size:.8rem;color:var(--ink-dim)" id="hd-hint">hold...</div>`;
+    const b=document.createElement('button'); b.className='mini-btn'; b.textContent='HOLD STILL';
+    const fail=()=>{ if(!held)return; held=false;
+      miniEnd(false, ()=>{ addSus(3+w*2); st.ctl=Math.max(0,st.ctl-2-I);
+        toast('She flinches. Only slightly. Slightly is enough for someone to see.'); }, done); };
+    b.onmousedown=()=>{ held=true; };
+    b.onmouseup=fail; b.onmouseleave=fail;
+    b.ontouchstart=(e)=>{e.preventDefault();held=true;};
+    b.ontouchend=fail;
+    $('#mini-btns').append(b);
+    miniTimer = setInterval(()=>{
+      if(!held) return;
+      t+=100; $('#shrink-bar').style.width = Math.min(100,t/dur*100)+'%';
+      if (rng()<0.05*I){ $('#hd-hint').textContent = pick(['a SPASM hits — hold...','someone brushes past — hold...','an itch, a twitch — HOLD...']);
+        if (G) gsap.fromTo('#mini-card',{x:-5},{x:0,duration:.25}); }
+      if (t>=dur) miniEnd(true, ()=>{ st.sus=Math.max(susFloor(),st.sus-4); st.ctl=Math.min(100,st.ctl+3);
+        toast('Statue-still through all of it. Stillness, it turns out, is armor.'); }, done);
+    },100);
+  }
+  else if (type==='volley'){
+    const set = shuffle((VOLLEY_SETS[ctx.vset]||VOLLEY_SETS.irina).slice()).slice(0, 2+I);
+    miniOpen('💬 KEEP UP THE CHATTER','Answer before the bar empties — hesitation looks like hiding something.');
+    let qi=0;
+    const ask=()=>{
+      if (qi>=set.length) return miniEnd(true, ()=>{ st.sus=Math.max(susFloor(),st.sus-4); addGG(2);
+        toast('Bright, easy, charming. Nobody chats like that with a secret. Right?'); }, done);
+      // Increased base time allowance
+      const q=set[qi]; let tleft = 5000 - I*350; 
+      $('#mini-stage').innerHTML = `<div class="prompt">${q.q}</div><div id="shrink-bar"></div>`;
+      const btns=$('#mini-btns'); btns.innerHTML='';
+      q.a.forEach(a=>{ const b=document.createElement('button'); b.className='mini-btn'; b.style.fontSize='.85rem'; b.textContent=a;
+        b.onclick=()=>{ qi++; ask(); }; btns.append(b); });
+      clearInterval(miniTimer);
+      miniTimer=setInterval(()=>{ tleft-=100;
+        $('#shrink-bar').style.width = Math.max(0,tleft/(5000-I*350)*100)+'%';
+        if (tleft<=0){ miniEnd(false, ()=>{ addSus(4+w); st.ctl=Math.max(0,st.ctl-2);
+          toast("'...Bonnie? You went somewhere just now.' The pause said more than any answer."); }, done); }
+      },100);
+    };
+    ask();
+  }
+  else if (type==='taps'){
+    miniOpen('✈️ BRACE FOR TURBULENCE','Match the arrow before the jolt lands!');
+    const rounds = 3+2*I; let ri=0, misses=0;
+    const arrows=[['⬅','LEFT'],['➡','RIGHT'],['⬆','BOTH']];
+    const show=()=>{
+      if (ri>=rounds) return miniEnd(true, ()=>{ st.ctl=Math.min(100,st.ctl+4);
+        toast('Braced through every jolt. The cargo, miraculously, holds — and she holds BETTER for it.'); }, done);
+      const target = pick(arrows);
+      $('#mini-stage').innerHTML = `<div class="arrow">${target[0]}</div>`;
+      const btns=$('#mini-btns'); btns.innerHTML='';
+      // Increased base time allowance
+      let tleft = 3000 - I*150, answered=false;
+      arrows.forEach(a=>{ const b=document.createElement('button'); b.className='mini-btn'; b.textContent=a[1];
+        b.onclick=()=>{ if(answered)return; answered=true;
+          if (a===target){ ri++; show(); }
+          else { misses++; st.ctl=Math.max(0,st.ctl-2);
+            if (G) gsap.fromTo('#mini-card',{y:-6},{y:0,duration:.3,ease:'bounce.out'});
+            if (misses>=2) miniEnd(false, ()=>{ toast('The jolt lands square on the cargo. Her eyes water at the ceiling.'); }, done);
+            else { ri++; show(); } }
+        }; btns.append(b); });
+      clearInterval(miniTimer);
+      miniTimer=setInterval(()=>{ tleft-=100;
+        if (tleft<=0){ clearInterval(miniTimer); misses++;
+          st.ctl=Math.max(0,st.ctl-3);
+          if (misses>=2) miniEnd(false, ()=>{ toast('Too slow — the jolt finds her unbraced, twice.'); }, done);
+          else { ri++; show(); } }
+      },100);
+    };
+    show();
+  }
+}
+
+/* ---------- the drink gauntlet: hospitality arrives in waves, escape only at the last cup ---------- */
+function makeParts(d){
+  const n = d.ml>=400 ? 3 : 2;
+  const fr = n===3 ? [.4,.35,.25] : [.6,.4];
+  const names = n===3 ? ['the first pour','the second cup','one last top-up'] : ['the first cup','the refill'];
+  return fr.map((f,i)=>({ml:Math.round(d.ml*f), lbl:names[i]}));
+}
+function renderGauntlet(b){
+  updateHUD();
+  const g = st.g, part = g.parts[g.i], last = g.i===g.parts.length-1;
+  $('#kicker').textContent = curCh().title.toUpperCase();
+  $('#watchers').textContent = watcherLine(watchNow());
+  const scene = g.i===0
+    ? b.t+'\n\n'+`First: ${part.lbl}, placed in front of her with love.`
+    : pick([`Empty. And immediately: ${part.lbl}, poured before she can inhale.`,
+            `'There we go!' — ${part.lbl} arrives, steaming, entirely non-optional.`,
+            `Her empty cup has been NOTICED. ${part.lbl} simply happens to her.`]);
+  const step = Math.round((b.min||20)/g.parts.length);
+  const list = [];
+  const gulp = (f)=>{
+    st.stomach += Math.round(part.ml*f);
+    if (g.i===0) st.drinksAccepted++;
+    g.drank = (g.drank||0)+Math.round(part.ml*f);
+    tick(step); st.chElapsed += step; decay(step, watchNow()); spasmCheck(watchNow());
+    if (checkEnd()) return;
+    g.i++;
+    if (g.i >= g.parts.length){
+      diary(`${b.drink.label}: ${g.drank} ml, served in ${g.parts.length} waves of hospitality.`);
+      st.g = null; return resolveBeat({min:0});
+    }
+    autosave(); renderGauntlet(b);
+  };
+  addC(list, "Down it — graceful, grateful, gone.", ()=>{
+    addGG(2); if (st.sus>30) st.sus=Math.max(susFloor(),st.sus-5);
+    setFace('😋',1400); gulp(1);
+  }, {icon:'🍵', tag:'DRINK'});
+  addC(list, "Sip it slowly — polite, and stalling for dear life.", ()=>{
+    st.ctl = Math.min(100, st.ctl+1); gulp(0.45);
+  }, {icon:'🫖', tag:'SIP'});
+  if (g.i===0 && st.bv > limit()*0.85){
+    addC(list, "\"I'm so sorry — the journey has absolutely wrecked me. Could I possibly just... go up to bed?\"", ()=>{
+      addGG(-10); addSus(8); setFace('🥺',2400);
+      diary('She begged off the hospitality, visibly running on fumes. They were kind about it. They also noticed everything.');
+      toast("'Oh you poor LAMB — of course, straight up you go!' Kindness, concern... and a long look between the hosts.");
+      st.g = null; resolveBeat({min:8});
+    }, {icon:'🛏️', tag:'BEG OFF · COSTLY'});
+  }
+  if (last) addC(list, "Nurse this one forever — tiny sips, long stories, buy every possible second.", ()=>{
+    const ml = Math.round(part.ml*0.55);
+    st.stomach += ml; g.drank = (g.drank||0)+ml;
+    st.ctl = Math.min(100, st.ctl+2);
+    diary(`${b.drink.label}: ${(g.drank)} ml total — the last cup nursed across three stories and a photo album. It still, eventually, was empty.`);
+    toast('She makes the last cup outlast a photo album. It empties anyway. They always do.');
+    st.g = null; resolveBeat({min:step+RI(6,12)});
+  }, {icon:'🐌', tag:'NURSE IT'});
+  paint(scene, list);
+}
+
+/* ---------- render ---------- */
+function render(){
+  updateHUD(); renderCope();
+  const c = curCh(), b = curBeat();
+  if (!b){ return; }
+  $('#kicker').textContent = c.title.toUpperCase();
+  const w = watchNow();
+  $('#watchers').textContent = watcherLine(w);
+  // the two-horned spot: the scene IS the dilemma (Chloe's lacing, etc.)
+  if (b.spot && !b._miniDone){
+    b._miniDone = true;
+    $('#kicker').textContent = c.title.toUpperCase();
+    $('#scene-text').textContent = typeof b.t==='function'? b.t() : b.t;
+    $('#choices').innerHTML=''; $('#urge-text').textContent='';
+    try{ return runMini('spot', b, ()=>{ if (!checkEnd()) resolveBeat({min:b.min}); }); }
+    catch(e){ miniClose(); return resolveBeat({min:b.min}); }
+  }
+  // scenario mini-game: paced out — never back-to-back, never every question
+  // (the scene paints FIRST, so the player always knows where they are)
+  if (b.mini && !b._miniDone){
+    b._miniDone = true;
+    if (st.lastMini !== b.mini && (st.sinceMini==null || st.sinceMini >= 2)){
+      st.lastMini = b.mini; st.sinceMini = 0;
+      $('#scene-text').textContent = typeof b.t==='function'? b.t() : b.t;
+      $('#choices').innerHTML=''; $('#urge-text').textContent='';
+      try{ return runMini(b.mini, b, ()=>{ if (!checkEnd()) render(); }); }
+      catch(e){ miniClose(); /* never let a broken game freeze her day */ }
+    }
+  }
+  // the spike lands AFTER she's had her chance to brace (mini first, impact second)
+  if (b.spike && !b._spiked){ b._spiked=true;
+    const sp = st.track==='hard' ? Math.ceil(b.spike.ctl/2) : b.spike.ctl;
+    st.ctl = Math.max(0, st.ctl+sp);
+    if (st.track==='hard' && watchNow()>0) addSus(3);
+    if (b.spike.note) toast(b.spike.note); if (checkEnd()) return; }
+  // the halo acts on her behalf — as cruel as it gets
+  if ((b.drink || b.offer) && !b._possRolled){
+    b._possRolled = true;
+    if (st.gg >= CFG.possessThreshold && rng() < (st.gg-74)/55){
+      setFace('😇', 3000);
+      // one counter exists: force her own hand back down
+      st.lastMini = 'mash'; st.sinceMini = 0;
+      $('#scene-text').textContent = typeof b.t==='function'? b.t() : b.t;
+      $('#choices').innerHTML=''; $('#urge-text').textContent='';
+      try{ return runMini('mash', {...b, mashTheme:'cup'}, (won)=>{
+        if (won){ addGG(-2); if (!checkEnd()) render(); }
+        else renderPossession(b);
+      }); }catch(e){ miniClose(); return renderPossession(b); }
+    }
+  }
+  // hospitality gauntlet: drinks come one by one, and only the last offers escape
+  if (b.drink){
+    if (!st.g) st.g = {i:0, parts: makeParts(b.drink)};
+    return renderGauntlet(b);
+  }
+  const list=[];
+  if (b.finale){
+    for(const ch of b.choices) addC(list, ch.x, ()=>runFinale(ch.route), {icon:ch.icon, tag:ch.tag, cls:ch.cls});
+  } else if (b.choices){
+    for(const ch of b.choices){
+      addC(list, ch.x, ()=>{
+        if (ch.noise!=null) st.noise += ch.noise;
+        if (ch.ctl) st.ctl = Math.max(0, Math.min(100, st.ctl+ch.ctl));
+        if (ch.gg) addGG(ch.gg);
+        if (ch.sus) addSus(ch.sus);
+        if (ch.ml) st.stomach += ch.ml;
+        if (ch.endChapter){ st.beatI = curCh().beats.length - 1; }
+        if (ch.track) st.track = ch.track;
+        if (ch.track==='hard'){
+          st.sus = Math.max(st.sus, 35); st.susHigh = true;
+          setFace('😖', 3000);
+          diary('The hard road, chosen at 4 AM with 2100 ml aboard. People will notice — people ALWAYS notice a girl who walks like that.');
+        }
+        if (ch.intel){ toast(`The honest math: ${Math.round(st.bv)} ml aboard right now. The record line: ${target()} ml. The ceiling: ${Math.round(limit())} ml. The number is not friendly — but it is finally REAL.`);
+          diary(`Mid-flight she did the real arithmetic: ${Math.round(st.bv)} ml, target ${target()}.`); }
+        // hidden roulette: which road is which changes every playthrough
+        if (ch.roulette==='route'){
+          const flip = ((st.seed >>> (st.chI+1)) & 1) === 1;
+          let slot = ch.slot; if (slot===2) slot = rng()<0.5 ? 0 : 1;
+          const isLong = (slot===0) !== flip;
+          if (isLong){
+            const extra = RI(12,26); tick(extra); st.chElapsed += extra;
+            setFace('😖',2200);
+            toast(pick(["It is the LONG way. Of course it is. The scenery is lovely; the kidneys are BUSY.",
+              "'Ah— roadworks.' The detour adds miles, minutes, and milliliters."]));
+            diary(`The route gamble: the long road. +${extra} silent minutes of filling.`);
+          } else {
+            const hit = RI(5,9); st.ctl = Math.max(0, st.ctl-hit);
+            setFace('🥵',2200);
+            toast(pick(["Shorter — and paved by demons. Every pothole lands square on the cargo.",
+              "Quick, yes. Smooth, NO. Her control and the suspension take the same beating."]));
+            diary(`The route gamble: the rough road. Control −${hit}.`);
+          }
+        }
+        // the confiscated drink: chug it or grieve it
+        if (ch.conf){
+          const d = st.confDrink || {n:'drink', ml:400};
+          if (ch.conf==='chug'){
+            st.stomach += d.ml; st.drinksAccepted++; st.ctl = Math.max(0, st.ctl-3);
+            setFace('😋',1500);
+            diary(`The ${d.n} (${d.ml} ml), chugged at a security barricade in under a minute.`);
+            toast('Down in one. The officer looks impressed. Her bladder is visibly— NO. Not visibly. Nothing is visible.');
+          } else {
+            addGG(-8); setFace('🥺',2000);
+            diary(`The ${d.n} went into the bin nearly full. Wasteful. The halo dimmed watching it glug away.`);
+            toast("It glugs into the bin, all that kindness wasted. Somewhere a barista's heart quietly breaks.");
+          }
+          st.confDrink = null;
+        }
+        if (ch.relief==='full'){ relief('home'); st.relievedAtHome=true; st.ctl=95; }
+        if (ch.runLost){ st.runLost = true;
+          diary("Staying up late with Irina cost more than sleep: she skipped her morning run. The empty-house window Bonnie was counting on quietly ceased to exist around midnight."); }
+        if (ch.x.includes('hold it. Twenty more hours')) st.heldAllNight = true;
+        if (ch.note) toast(ch.note);
+        resolveBeat({min: ch.min!=null? ch.min : b.min});
+      }, {icon:ch.icon, tag:ch.tag, cls:ch.cls});
+    }
+  }
+  if (b.offer) offerPattern(list, b.offer);
+  if (!list.length){
+    // which poison? there is no free option, ever
+    addC(list, "Power through — brisk, bright, and paid for in control.", ()=>{
+      st.ctl=Math.max(0,st.ctl-4); addGG(2); resolveBeat({min:b.min}); }, {icon:'💪', tag:'BODY'});
+    addC(list, "Go slow and gentle — and give the kidneys all that extra time.", ()=>{
+      st.ctl=Math.min(100,st.ctl+2); resolveBeat({min:Math.round((b.min||15)*1.45)}); }, {icon:'🐢', tag:'TIME'});
+    addC(list, "Chatter and charm as cover — composure spent on the performance.", ()=>{
+      st.sus=Math.max(susFloor(),st.sus-4); st.ctl=Math.max(0,st.ctl-3); addGG(1); resolveBeat({min:b.min}); }, {icon:'💬', tag:'NERVE'});
+  }
+  paint(typeof b.t==='function' ? b.t() : b.t, list);
+}
+function paint(text, choices){
+  const sc=$('#scene-text'), ue=$('#urge-text'), chEl=$('#choices');
+  sc.textContent = text;
+  const bd = band();
+  const yearn = (bd==='tense'||bd==='desperate'||bd==='critical') && NEED[bd] && rng()<0.5;
+  ue.textContent = '“'+pick(yearn?NEED[bd]:URGE[bd])+'”';
+  chEl.innerHTML='';
+  for(const c of choices){
+    const btn=document.createElement('button');
+    btn.className='choice'+(c.cls?' '+c.cls:'');
+    btn.innerHTML=`<span class="ico">${c.icon||'💭'}</span><span>${c.x}</span>`+(c.tag?`<span class="tag">${c.tag}</span>`:'');
+    btn.onclick=()=>{ chEl.querySelectorAll('.choice').forEach(x=>x.onclick=null); c.fn(); };
+    chEl.appendChild(btn);
+  }
+  if (G){
+    G.fromTo(sc,{opacity:0,y:16,filter:'blur(9px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.6,ease:'power3.out'});
+    G.fromTo(ue,{opacity:0,x:-12},{opacity:1,x:0,duration:.6,delay:.3});
+    G.fromTo('#choices .choice',{opacity:0,y:14,scale:.97},{opacity:1,y:0,scale:1,duration:.45,stagger:.07,delay:.25,ease:'back.out(1.4)'});
+    G.fromTo('#choices .choice .ico',{scale:0,rotate:-30},{scale:1,rotate:0,duration:.5,stagger:.07,delay:.35,ease:'back.out(2.2)'});
+  }
+}
+/* ================= END RUNNER ================= */
+
+/* ================= CEL BLADDER ================= */
+let blob=null;
+const blobT={fill:.05,vib:0,pulse:0,red:0,shake:0};
+function updateBlobTargets(){
+  if(!st) return;
+  if (st.track==='hard' && st.bv>=2000){
+    // PERMANENTLY FRANTIC: full-looking, trembling, pulsing, red-rimmed, always
+    blobT.fill = 0.55 + 0.45*Math.min(1, Math.max(0,(st.bv-2100)/(3750-2100)));
+    blobT.vib = 1; blobT.pulse = 1;
+    blobT.red = Math.max(0.5, Math.min(1,(st.bv-2900)/700));
+    blobT.shake = 0.8 + blobT.red*0.8;
+    return;
+  }
+  const p=press();
+  blobT.fill=Math.min(1,Math.max(.03,p));
+  blobT.vib = p>0.6?1:0;
+  blobT.pulse = p>0.78?1:0;
+  blobT.red = Math.min(1,Math.max(0,(p-0.85)/0.2));
+  blobT.shake = p>0.92?0.5+blobT.red:0;
+}
+function initBlob(){
+  const canvas=$('#blob-canvas');
+  if(blob&&blob.raf)cancelAnimationFrame(blob.raf);
+  const cur={fill:.05,vib:0,pulse:0,red:0,shake:0};
+  let t=0,last=performance.now();
+  function bump(th,c,w,h){const d=th-c;return h*Math.exp(-(d*d)/w);}
+  function bp(ctx,cx,cy,Rr,wob,fill,time){
+    ctx.beginPath();
+    for(let i=0;i<=88;i++){
+      const th=i/88*Math.PI*2-Math.PI;
+      const ex=Math.cos(th)*1.07, ey=Math.sin(th)*0.97;
+      let r=Math.sqrt(ex*ex+ey*ey);
+      r+=bump(th,-0.88,0.020,0.13)+bump(th,-2.26,0.020,0.13);
+      r-=bump(th,-1.57,0.10,0.055);
+      r+=bump(th,1.57,0.012,0.14);
+      r*=1+0.10*fill*Math.max(0,Math.sin(th));
+      r*=1+wob*(Math.sin(3*th+time*6)*0.6+Math.sin(5*th-time*9)*0.4);
+      const x=cx+Math.cos(th)*Rr*r, y=cy+Math.sin(th)*Rr*r;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.closePath();
+  }
+  function fp(ctx,cx,Rr,lv,time,tilt,bot){
+    const L=cx-Rr*1.6,Rt=cx+Rr*1.6;
+    ctx.beginPath();ctx.moveTo(L,lv+(L-cx)*tilt);
+    for(let x=L;x<=Rt;x+=5)ctx.lineTo(x,lv+(x-cx)*tilt+Math.sin(x*0.05+time*2.2)*3);
+    ctx.lineTo(Rt,bot+Rr);ctx.lineTo(L,bot+Rr);ctx.closePath();
+  }
+  function loop(now){
+    blob.raf=requestAnimationFrame(loop);
+    const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;
+    const k=1-Math.pow(.02,dt);
+    for(const key of ['fill','vib','pulse','red','shake'])cur[key]+=((blobT[key]||0)-cur[key])*k;
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    const W=canvas.clientWidth,H=canvas.clientHeight;
+    if(!W||!H)return;
+    if(canvas.width!==Math.floor(W*dpr)){canvas.width=W*dpr;canvas.height=H*dpr;}
+    const ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    const cx=W/2,cy=H/2-H*0.02,Rr=Math.min(W,H)*0.335;
+    const stg=cur.red<0.25?0:cur.red<0.6?1:2;
+    const MEMB=['#eed3a0','#eebca0','#f0a29a'][stg];
+    const SHAD=['#cfa96a','#d19478','#d67f78'][stg];
+    const OUTL=['#4a3410','#7a2818','#b01414'][stg];
+    const breath=1+0.012*Math.sin(t*(0.9+cur.pulse*1.6))*(1+cur.pulse*1.4);
+    const jx=(Math.random()-.5)*(cur.vib*1.4+cur.shake*4);
+    const jy=(Math.random()-.5)*(cur.vib*1+cur.shake*4);
+    const wob=0.006+cur.vib*0.007+cur.pulse*0.008+cur.shake*0.006;
+    ctx.save();
+    ctx.translate(cx+jx,cy+jy);ctx.rotate(Math.sin(t*0.5)*0.015);ctx.scale(breath,breath);ctx.translate(-cx,-cy);
+    bp(ctx,cx,cy,Rr,wob,cur.fill,t);ctx.fillStyle=SHAD;ctx.fill();
+    ctx.save();ctx.clip();
+    bp(ctx,cx-Rr*0.13,cy-Rr*0.12,Rr*0.985,wob,cur.fill,t);ctx.fillStyle=MEMB;ctx.fill();
+    const top=cy-Rr*1.18,bot=cy+Rr*1.22,lv=bot-(bot-top)*cur.fill;
+    const tilt=Math.sin(t*(0.5-cur.fill*0.2))*(0.04+cur.fill*0.05);
+    fp(ctx,cx,Rr,lv,t,tilt,bot);ctx.fillStyle='#f2b705';ctx.fill();
+    fp(ctx,cx,Rr,lv+Rr*0.5,t*1.4,tilt*0.6,bot);ctx.fillStyle='#d69c02';ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx-Rr*0.42,cy-Rr*0.55,Rr*0.19,Rr*0.30,-0.5,0,7);
+    ctx.fillStyle='rgba(255,250,225,.92)';ctx.fill();
+    ctx.restore();
+    bp(ctx,cx,cy,Rr,wob,cur.fill,t);
+    ctx.lineWidth=6;ctx.lineJoin='round';ctx.strokeStyle=OUTL;ctx.stroke();
+    // the crown notch — 150%: where legend starts. Fog never touches this.
+    const lvC = bot-(bot-top)*(target()/limit());
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(cx-Rr*1.12,lvC);ctx.lineTo(cx+Rr*1.12,lvC);
+    ctx.lineWidth=2;ctx.strokeStyle='rgba(74,52,16,.75)';ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font='14px serif';ctx.textAlign='left';
+    ctx.fillText('👑', cx+Rr*1.14, lvC+5);
+    if(cur.pulse>0.4){
+      const on=Math.sin(t*8)>0?1:0.25;
+      ctx.strokeStyle=OUTL;ctx.lineWidth=3.5;ctx.lineCap='round';
+      ctx.globalAlpha=(0.4+0.6*cur.pulse)*on;
+      for(const a of [-0.55,-1.05,-1.57,-2.1,-2.6]){
+        const r1=Rr*1.14,r2=Rr*(1.24+0.05*Math.sin(t*8+a*3));
+        ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1*0.97);
+        ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2*0.97);ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  }
+  blob={mode:'cel'};
+  blob.raf=requestAnimationFrame(loop);
+}
+
+/* ================= AMBIENT BACKDROP ================= */
+let BGuni=null;
+function initBG(){
+  const c=document.getElementById('bg-fluid');
+  if(typeof THREE==='undefined'){if(c)c.style.display='none';return;}
+  try{
+    const r=new THREE.WebGLRenderer({canvas:c,antialias:false});
+    r.setSize(innerWidth,innerHeight,false);
+    r.setPixelRatio(Math.min(1.25,window.devicePixelRatio||1));
+    const sc=new THREE.Scene(),cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    BGuni={uT:{value:0},uTen:{value:0},uRed:{value:0},uRes:{value:new THREE.Vector2(innerWidth,innerHeight)}};
+    const m=new THREE.ShaderMaterial({uniforms:BGuni,
+      vertexShader:'void main(){gl_Position=vec4(position,1.0);}',
+      fragmentShader:`
+        precision mediump float;
+        uniform float uT,uTen,uRed;uniform vec2 uRes;
+        float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+        float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+          return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+        float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.03;a*=0.5;}return v;}
+        void main(){
+          vec2 uv=gl_FragCoord.xy/uRes.xy;
+          vec2 p=uv*vec2(uRes.x/uRes.y,1.0)*2.2;
+          float t=uT*(0.03+uTen*0.09);
+          float f=fbm(p+vec2(t,-t*0.7)+fbm(p*1.7-t)*0.85);
+          vec3 base=vec3(0.115,0.11,0.13);
+          vec3 warm=vec3(0.17,0.155,0.14);
+          vec3 gold=vec3(0.45,0.36,0.14);
+          vec3 col=mix(base,warm,smoothstep(0.2,0.8,f));
+          col+=gold*pow(smoothstep(0.55,0.95,f),3.0)*(0.35+uTen*0.45);
+          col=mix(col,vec3(0.34,0.08,0.10),uRed*pow(smoothstep(0.4,1.0,f),2.0)*0.8);
+          float vg=1.0-smoothstep(0.4,1.25,length(uv-0.5)*1.6);
+          col*=0.6+0.4*vg;
+          gl_FragColor=vec4(col,1.0);
+        }`});
+    sc.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),m));
+    addEventListener('resize',()=>{r.setSize(innerWidth,innerHeight,false);BGuni.uRes.value.set(innerWidth,innerHeight);});
+    (function bgLoop(tm){requestAnimationFrame(bgLoop);BGuni.uT.value=tm/1000;r.render(sc,cam);})(0);
+  }catch(e){if(c)c.style.display='none';BGuni=null;}
+}
+
+/* ================= SAVE / LOAD ================= */
+const SLOTS=['bonnie_s1','bonnie_s2','bonnie_s3'], AUTO='bonnie_auto';
+function serialize(){ return JSON.stringify({...st, savedAt:Date.now()}); }
+function deserialize(j){ const d=JSON.parse(j); if(d.v!==2) throw new Error('ver'); st=d;
+  rng=mulberry32((st.seed+st.time*7)>>>0); }
+function meta(j){ try{ const d=JSON.parse(j);
+  return `${CH[d.chI].icon} ${CH[d.chI].title.split('—')[1]||CH[d.chI].title} · ${Math.round(d.bv)} ml · 😇${Math.round(d.gg)}`;
+ }catch(e){ return 'Corrupted'; } }
+function autosave(){ if(st&&!st.over) try{localStorage.setItem(AUTO,serialize())}catch(e){} }
+function clearAuto(){ try{localStorage.removeItem(AUTO)}catch(e){} }
+function openMenu(mode){
+  const m=$('#modal'); $('#modal-veil').classList.add('on');
+  m.innerHTML=`<button class="close-x" onclick="document.getElementById('modal-veil').classList.remove('on')">×</button>
+    <h3>${mode==='save'?'Save her journey':'Resume a journey'}</h3>`;
+  const keys=mode==='load'?[AUTO,...SLOTS]:SLOTS;
+  keys.forEach(k=>{
+    const j=localStorage.getItem(k);
+    const s=document.createElement('div');s.className='slot';
+    s.innerHTML=`<div class="info"><b>${k===AUTO?'Autosave':'Slot '+(SLOTS.indexOf(k)+1)}</b>${j?meta(j):'— empty —'}</div>`;
+    const b=document.createElement('button');b.className='btn small';
+    if(mode==='save'){ b.textContent=j?'Overwrite':'Save';
+      b.onclick=()=>{localStorage.setItem(k,serialize());toast('Saved.');$('#modal-veil').classList.remove('on');};}
+    else{ b.textContent='Load'; b.disabled=!j;
+      b.onclick=()=>{ try{ deserialize(j); $('#modal-veil').classList.remove('on');
+        show('#scr-game'); initBlob(); render(); toast('The journey resumes.'); }
+        catch(e){ toast('That save is from another version.'); } };}
+    s.appendChild(b);m.appendChild(s);
+  });
+  const exp=document.createElement('div');
+  exp.innerHTML=`<h3 style="margin-top:16px">Export / Import</h3>
+    <textarea id="exp-ta" placeholder="Paste a code to import..."></textarea>
+    <div class="btn-row" style="justify-content:flex-start">
+      <button class="btn small ghost" id="b-exp">Copy code</button>
+      <button class="btn small ghost" id="b-imp">Import</button></div>`;
+  m.appendChild(exp);
+  $('#b-exp').onclick=()=>{ if(!st){toast('Nothing to export.');return;}
+    $('#exp-ta').value=btoa(unescape(encodeURIComponent(serialize()))); toast('Code ready.'); };
+  $('#b-imp').onclick=()=>{ try{ deserialize(decodeURIComponent(escape(atob($('#exp-ta').value.trim()))));
+    $('#modal-veil').classList.remove('on'); show('#scr-game'); initBlob(); render(); toast('Imported.');
+  }catch(e){ toast('That code didn\'t work.'); } };
+}
+
+/* ================= BOOT ================= */
+$('#btn-new').onclick=()=>show('#scr-rules');
+$('#btn-loadmenu').onclick=()=>openMenu('load');
+$('#btn-begin').onclick=()=>{
+  const seed=Date.now()>>>0; rng=mulberry32(seed);
+  st=newState(seed); resetCope();
+  show('#scr-game'); initBlob(); render();
+  toast('4:10 AM. Everyone is asleep. The record is already 20 hours old.');
+};
+$('#btn-save').onclick=()=>openMenu('save');
+$('#btn-load').onclick=()=>openMenu('load');
+$('#btn-quit').onclick=()=>{ if(confirm('Abandon the journey?')) location.reload(); };
+$('#btn-retry').onclick=()=>location.reload();
+$('#btn-menu').onclick=()=>location.reload();
+initBG();
+/* ================= Bonnie is a Good Girl — v1.0 ================= */
+</script>
+</body>
+</html>
+
+```
